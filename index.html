@@ -140,6 +140,7 @@
     border-color: var(--signal-line);
     box-shadow: 0 0 0 3px var(--signal-dim);
   }
+  textarea.form-control { resize: vertical; min-height: 70px; font-family: 'Inter', sans-serif; }
   .login-btn {
     background: var(--signal);
     color: #04181d;
@@ -221,20 +222,26 @@
     color: var(--signal);
     font-weight: 600;
   }
-  .nav-left { display: flex; align-items: center; gap: 16px; }
+  .nav-left { display: flex; align-items: center; gap: 14px; }
   .nav-info {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
     color: var(--text-1);
   }
+  .nav-user {
+    font-size: 12.5px;
+    color: var(--text-1);
+    padding-right: 14px;
+    border-right: 1px solid var(--line);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   main { padding: 2rem; max-width: 1440px; margin: 0 auto; }
 
-  /* ---- stats ----
-     Each stat is now its own elevated card (not a fused strip):
-     icon chip up top in the metric's own tint, a big tabular
-     number, a trailing micro-label, and a soft lift on hover.
-     This reads as a real metrics row instead of a table header. */
+  /* ---- stats ---- */
   .stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -285,12 +292,6 @@
     border: 1px solid var(--tint-line, var(--signal-line));
     flex-shrink: 0;
   }
-  .stat-trend {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--text-2);
-    letter-spacing: 0.3px;
-  }
   .stat-label {
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
@@ -335,7 +336,7 @@
   }
   .search-wrap { position: relative; flex: 1; min-width: 220px; }
   .search-wrap svg { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-2); pointer-events: none; }
-  input[type="text"], select {
+  input[type="text"], input[type="search"], select {
     background: var(--bg-0);
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -348,11 +349,30 @@
     width: 100%;
   }
   select { padding: 9px 14px; cursor: pointer; }
-  input[type="text"]::placeholder { color: var(--text-2); }
-  input[type="text"]:focus, select:focus {
+  input::placeholder { color: var(--text-2); }
+  input[type="text"]:focus, input[type="search"]:focus, select:focus {
     border-color: var(--signal-line);
     box-shadow: 0 0 0 3px var(--signal-dim);
   }
+
+  .btn-primary {
+    background: var(--signal);
+    color: #04181d;
+    border: none;
+    border-radius: 6px;
+    padding: 9px 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .table-card {
     background: var(--bg-1);
@@ -515,11 +535,89 @@
     margin-bottom: 1.5rem;
     display: none;
   }
+  .success-banner {
+    background: var(--ok-dim);
+    border: 1px solid rgba(61, 214, 140, 0.3);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    color: var(--ok);
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    display: none;
+  }
+
+  /* ---- Add Employee modal ---- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 9, 0.7);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  .modal-card {
+    background: var(--bg-1);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-pop);
+  }
+  .modal-header {
+    padding: 1.3rem 1.6rem;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--text-0); }
+  .modal-close {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    color: var(--text-1);
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .modal-close:hover { color: var(--text-0); border-color: var(--bad); }
+  .modal-body { padding: 1.5rem 1.6rem; }
+  .modal-footer {
+    padding: 1.1rem 1.6rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-error {
+    background: var(--bad-dim);
+    border: 1px solid rgba(240, 85, 107, 0.3);
+    color: var(--bad);
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 9px 12px;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    display: none;
+  }
 
   @media (max-width: 640px) {
     main { padding: 1.25rem; }
     nav { padding: 0 1.25rem; }
     .nav-brand-text .subtitle { display: none; }
+    .nav-user { display: none; }
+    .form-row { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -533,19 +631,19 @@
       <h1>Sign in to continue</h1>
       <p>Access restricted to authorized personnel</p>
     </div>
-    <div class="login-error" id="loginError">Invalid username or password</div>
+    <div class="login-error" id="loginError">Invalid email or password</div>
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="form-group">
-        <label for="username">Username</label>
-        <input type="text" id="username" class="form-control" placeholder="Enter your username" autocomplete="username" required>
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="you@company.com" autocomplete="username" required>
       </div>
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" autocomplete="current-password" required>
       </div>
       <button type="submit" class="login-btn" id="loginBtn">Sign in</button>
     </form>
-    <div class="login-note">SESSION-BASED ACCESS · NOT FOR PRODUCTION-GRADE AUTH</div>
+    <div class="login-note">AUTHENTICATED VIA SUPABASE AUTH · SESSION-SCOPED ACCESS</div>
   </div>
 </div>
 
@@ -559,6 +657,7 @@
       </div>
     </div>
     <div class="nav-left">
+      <span class="nav-user mono" id="navUserEmail"></span>
       <div class="nav-info mono" id="lastSync">Loading...</div>
       <button class="btn-danger" onclick="handleLogout()">Sign out</button>
     </div>
@@ -566,6 +665,7 @@
 
   <main>
     <div class="error-banner" id="errorBanner"></div>
+    <div class="success-banner" id="successBanner"></div>
 
     <div class="stats">
       <div class="stat" data-tone="neutral">
@@ -635,6 +735,10 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
         Refresh
       </button>
+      <button class="btn-primary" onclick="openAddModal()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add employee
+      </button>
     </div>
 
     <div class="table-card">
@@ -674,20 +778,80 @@
   </main>
 </div>
 
-<script>
-  // SECURITY TODO (deferred by agreement): replace this with real
-  // server-side auth via Supabase Auth + RLS.
-  const AUTH_USER = 'admin';
-  const AUTH_PASS = 'admin123';
+<!-- Add Employee modal -->
+<div class="modal-overlay" id="addModalOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">Add employee</span>
+      <button class="modal-close" onclick="closeAddModal()" aria-label="Close">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="addEmployeeForm" onsubmit="handleAddEmployee(event)">
+      <div class="modal-body">
+        <div class="form-error" id="addFormError"></div>
+        <div class="form-group">
+          <label for="addName">Full name</label>
+          <input type="text" id="addName" class="form-control" placeholder="e.g. Youssef Magdy Ibrahim" required>
+        </div>
+        <div class="form-group">
+          <label for="addNationalId">National ID</label>
+          <input type="text" id="addNationalId" class="form-control" placeholder="e.g. 30111052401772" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="addShift">Shift</label>
+            <input type="text" id="addShift" class="form-control" placeholder="e.g. Overnight" required>
+          </div>
+          <div class="form-group">
+            <label for="addRole">Role</label>
+            <input type="text" id="addRole" class="form-control" placeholder="e.g. Labeler" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="addProject">Project</label>
+            <input type="text" id="addProject" class="form-control" placeholder="e.g. GT" required>
+          </div>
+          <div class="form-group">
+            <label for="addStatus">Status</label>
+            <select id="addStatus" class="form-control" required>
+              <option value="working">Working</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="addLocation">Location</label>
+          <input type="text" id="addLocation" class="form-control" placeholder="e.g. Nasr City A106" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="closeAddModal()">Cancel</button>
+        <button type="submit" class="btn-primary" id="addSubmitBtn">Add employee</button>
+      </div>
+    </form>
+  </div>
+</div>
 
+<script>
+  // ============================================================
+  // Supabase Auth integration
+  // Sign-in now goes through real Supabase Auth (email + password)
+  // instead of a hardcoded local check. The session access token
+  // returned by Supabase is what authorizes both reads and the
+  // Add Employee insert — there is no password stored in this file.
+  // ============================================================
   const SUPABASE_URL = 'https://dibhtnnkhakcygzpenwg.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
   const TABLE = 'employees';
+  const SESSION_KEY = 'supabaseSession';
 
   let allData = [];
   let sortCol = '';
   let sortAsc = true;
   let pollTimer = null;
+  let session = null; // { access_token, refresh_token, user: { email } }
 
   function escapeHTML(value) {
     if (value === null || value === undefined) return '';
@@ -699,9 +863,6 @@
       .replaceAll("'", '&#39;');
   }
 
-  // توحيد قيم الشيفت: أي قيمة بتتطابق مع تانية بتجاهل حالة الحروف
-  // (mapping = Mapping = MAPPING) بتتجمع كخيار واحد، وبتتعرض بصيغة
-  // Title Case (أول حرف كبير، الباقي صغير) في الفلتر وفي الجدول.
   function normalizeShift(value) {
     if (value === null || value === undefined) return '';
     const trimmed = String(value).trim();
@@ -709,52 +870,121 @@
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
   }
 
+  function getSession() {
+    if (session) return session;
+    try {
+      const raw = sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      session = JSON.parse(raw);
+      return session;
+    } catch {
+      return null;
+    }
+  }
+
+  function saveSession(newSession) {
+    session = newSession;
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(newSession));
+  }
+
+  function clearSession() {
+    session = null;
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  // Builds the headers Supabase needs for an authenticated request.
+  // The anon key still goes in `apikey` (Supabase requires it to
+  // identify the project), but `Authorization` carries the user's
+  // own access token, so RLS policies see them as `authenticated`,
+  // not `anon`.
+  function authHeaders(extra) {
+    const s = getSession();
+    return {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${s ? s.access_token : SUPABASE_ANON_KEY}`,
+      ...extra
+    };
+  }
+
   window.onload = function() {
-    if (sessionStorage.getItem('isLoggedIn') === 'true') {
+    if (getSession()) {
       showDashboard();
     }
   }
 
   window.addEventListener('beforeunload', stopPolling);
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value;
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
     const errorDiv = document.getElementById('loginError');
     const btn = document.getElementById('loginBtn');
 
     btn.disabled = true;
+    errorDiv.style.display = 'none';
 
-    if (user === AUTH_USER && pass === AUTH_PASS) {
-      sessionStorage.setItem('isLoggedIn', 'true');
-      errorDiv.style.display = 'none';
-      document.getElementById('password').value = '';
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.access_token) {
+        throw new Error(data.error_description || data.msg || 'Invalid email or password');
+      }
+
+      saveSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        user: { email: data.user && data.user.email ? data.user.email : email }
+      });
+
+      document.getElementById('loginPassword').value = '';
       showDashboard();
-    } else {
+    } catch (err) {
+      errorDiv.textContent = err.message || 'Invalid email or password';
       errorDiv.style.display = 'block';
-      document.getElementById('password').value = '';
+      document.getElementById('loginPassword').value = '';
+    } finally {
+      btn.disabled = false;
     }
-
-    btn.disabled = false;
   }
 
-  function handleLogout() {
+  async function handleLogout() {
     stopPolling();
-    sessionStorage.removeItem('isLoggedIn');
+    const s = getSession();
+    // best-effort revoke; ignore failures, we clear local session regardless
+    if (s && s.access_token) {
+      try {
+        await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+          method: 'POST',
+          headers: authHeaders()
+        });
+      } catch {}
+    }
+    clearSession();
     allData = [];
     sortCol = '';
     sortAsc = true;
     document.getElementById('dashboardSection').style.display = 'none';
     document.getElementById('loginSection').style.display = 'flex';
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
     document.getElementById('loginError').style.display = 'none';
   }
 
   function showDashboard() {
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('dashboardSection').style.display = 'block';
+    const s = getSession();
+    document.getElementById('navUserEmail').textContent = s && s.user ? s.user.email : '';
     loadData();
     startPolling();
   }
@@ -762,7 +992,7 @@
   function startPolling() {
     stopPolling();
     pollTimer = setInterval(() => {
-      if (sessionStorage.getItem('isLoggedIn') === 'true') {
+      if (getSession()) {
         loadData();
       } else {
         stopPolling();
@@ -777,8 +1007,23 @@
     }
   }
 
+  function showError(message) {
+    const banner = document.getElementById('errorBanner');
+    banner.style.display = 'block';
+    banner.textContent = message;
+    document.getElementById('successBanner').style.display = 'none';
+  }
+
+  function showSuccess(message) {
+    const banner = document.getElementById('successBanner');
+    banner.style.display = 'block';
+    banner.textContent = message;
+    document.getElementById('errorBanner').style.display = 'none';
+    setTimeout(() => { banner.style.display = 'none'; }, 4000);
+  }
+
   async function loadData() {
-    if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
+    if (!getSession()) return;
 
     document.getElementById('loadingState').style.display = 'block';
     document.getElementById('empTable').style.display = 'none';
@@ -788,12 +1033,18 @@
 
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?select=*&limit=5000&order=Name.asc`, {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Prefer': 'count=exact'
-        }
+        headers: authHeaders({ 'Prefer': 'count=exact' })
       });
+
+      if (res.status === 401) {
+        // session expired or invalid — send the user back to sign in
+        clearSession();
+        document.getElementById('dashboardSection').style.display = 'none';
+        document.getElementById('loginSection').style.display = 'flex';
+        document.getElementById('loginError').textContent = 'Your session expired. Please sign in again.';
+        document.getElementById('loginError').style.display = 'block';
+        return;
+      }
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
@@ -807,17 +1058,12 @@
 
     } catch (err) {
       document.getElementById('loadingState').style.display = 'none';
-      const banner = document.getElementById('errorBanner');
-      banner.style.display = 'block';
-      banner.textContent = 'Failed to load data: ' + escapeHTML(err.message);
+      showError('Failed to load data: ' + escapeHTML(err.message));
       document.getElementById('lastSync').textContent = 'Sync failed';
     }
   }
 
   function populateFilters() {
-    // تجميع قيم الشيفت بتجاهل حالة الحروف: نخزن أول قيمة شفناها لكل
-    // نسخة موحدة (lowercase) كمفتاح، عشان نعرضها بصيغة Title Case واحدة
-    // بدل ما تتكرر (mapping / Mapping / MAPPING) كخيارات منفصلة.
     const shiftMap = new Map();
     allData.forEach(r => {
       const normalized = normalizeShift(r.Shift);
@@ -957,6 +1203,82 @@
     if (sortCol === col) sortAsc = !sortAsc;
     else { sortCol = col; sortAsc = true; }
     applyFilters();
+  }
+
+  // ---------------- Add Employee ----------------
+
+  function openAddModal() {
+    document.getElementById('addFormError').style.display = 'none';
+    document.getElementById('addEmployeeForm').reset();
+    document.getElementById('addModalOverlay').style.display = 'flex';
+  }
+
+  function closeAddModal() {
+    document.getElementById('addModalOverlay').style.display = 'none';
+  }
+
+  document.getElementById('addModalOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'addModalOverlay') closeAddModal();
+  });
+
+  async function handleAddEmployee(event) {
+    event.preventDefault();
+
+    if (!getSession()) {
+      showError('Your session expired. Please sign in again.');
+      closeAddModal();
+      return;
+    }
+
+    const errorDiv = document.getElementById('addFormError');
+    const submitBtn = document.getElementById('addSubmitBtn');
+    errorDiv.style.display = 'none';
+
+    const payload = {
+      'Name': document.getElementById('addName').value.trim(),
+      'National ID': document.getElementById('addNationalId').value.trim(),
+      'Shift': document.getElementById('addShift').value.trim(),
+      'Role': document.getElementById('addRole').value.trim(),
+      'Project': document.getElementById('addProject').value.trim(),
+      'Status': document.getElementById('addStatus').value,
+      'Location': document.getElementById('addLocation').value.trim()
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding...';
+
+    try {
+      // INSERT here relies on the signed-in user's access token (sent via
+      // authHeaders) satisfying the "admins can insert employees" RLS
+      // policy on the employees table — not the anon key.
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, {
+        method: 'POST',
+        headers: authHeaders({
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        }),
+        body: JSON.stringify(payload)
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('You are not authorized to add employees with this account.');
+      }
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.message || `Error ${res.status}: ${res.statusText}`);
+      }
+
+      closeAddModal();
+      showSuccess(`${payload['Name'] || 'Employee'} was added successfully.`);
+      await loadData();
+
+    } catch (err) {
+      errorDiv.textContent = err.message || 'Failed to add employee.';
+      errorDiv.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add employee';
+    }
   }
 </script>
 </body>
