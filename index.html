@@ -359,14 +359,30 @@
         <div class="form-group"><label>Full name</label><input type="text" id="addName" class="form-control" placeholder="e.g. Youssef Magdy Ibrahim" required></div>
         <div class="form-group"><label>National ID</label><input type="text" id="addNationalId" class="form-control" placeholder="e.g. 30111052401772" required></div>
         <div class="form-row">
-          <div class="form-group"><label>Shift</label><input type="text" id="addShift" class="form-control" placeholder="e.g. Overnight" required></div>
-          <div class="form-group"><label>Role</label><input type="text" id="addRole" class="form-control" placeholder="e.g. Labeler" required></div>
+          <div class="form-group">
+            <label>Shift</label>
+            <select id="addShift" class="form-control" onchange="handleSelectOther(this,'addShiftOther')" required></select>
+            <input type="text" id="addShiftOther" class="form-control" placeholder="Type new shift" style="display:none;margin-top:8px">
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="addRole" class="form-control" onchange="handleSelectOther(this,'addRoleOther')" required></select>
+            <input type="text" id="addRoleOther" class="form-control" placeholder="Type new role" style="display:none;margin-top:8px">
+          </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>Project</label><input type="text" id="addProject" class="form-control" placeholder="e.g. GT" required></div>
+          <div class="form-group">
+            <label>Project</label>
+            <select id="addProject" class="form-control" onchange="handleSelectOther(this,'addProjectOther')" required></select>
+            <input type="text" id="addProjectOther" class="form-control" placeholder="Type new project" style="display:none;margin-top:8px">
+          </div>
           <div class="form-group"><label>Status</label><select id="addStatus" class="form-control"><option value="working">Working</option><option value="inactive">Inactive</option></select></div>
         </div>
-        <div class="form-group"><label>Location</label><input type="text" id="addLocation" class="form-control" placeholder="e.g. Nasr City A106" required></div>
+        <div class="form-group">
+          <label>Location</label>
+          <select id="addLocation" class="form-control" onchange="handleSelectOther(this,'addLocationOther')" required></select>
+          <input type="text" id="addLocationOther" class="form-control" placeholder="Type new location" style="display:none;margin-top:8px">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-ghost" onclick="closeAddModal()">Cancel</button>
@@ -392,14 +408,30 @@
         </div>
         <div class="form-group"><label>Full name</label><input type="text" id="editName" class="form-control" required></div>
         <div class="form-row">
-          <div class="form-group"><label>Shift</label><input type="text" id="editShift" class="form-control" required></div>
-          <div class="form-group"><label>Role</label><input type="text" id="editRole" class="form-control" required></div>
+          <div class="form-group">
+            <label>Shift</label>
+            <select id="editShift" class="form-control" onchange="handleSelectOther(this,'editShiftOther')" required></select>
+            <input type="text" id="editShiftOther" class="form-control" placeholder="Type new shift" style="display:none;margin-top:8px">
+          </div>
+          <div class="form-group">
+            <label>Role</label>
+            <select id="editRole" class="form-control" onchange="handleSelectOther(this,'editRoleOther')" required></select>
+            <input type="text" id="editRoleOther" class="form-control" placeholder="Type new role" style="display:none;margin-top:8px">
+          </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label>Project</label><input type="text" id="editProject" class="form-control" required></div>
+          <div class="form-group">
+            <label>Project</label>
+            <select id="editProject" class="form-control" onchange="handleSelectOther(this,'editProjectOther')" required></select>
+            <input type="text" id="editProjectOther" class="form-control" placeholder="Type new project" style="display:none;margin-top:8px">
+          </div>
           <div class="form-group"><label>Status</label><select id="editStatus" class="form-control"><option value="working">Working</option><option value="inactive">Inactive</option></select></div>
         </div>
-        <div class="form-group"><label>Location</label><input type="text" id="editLocation" class="form-control" required></div>
+        <div class="form-group">
+          <label>Location</label>
+          <select id="editLocation" class="form-control" onchange="handleSelectOther(this,'editLocationOther')" required></select>
+          <input type="text" id="editLocationOther" class="form-control" placeholder="Type new location" style="display:none;margin-top:8px">
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-ghost" onclick="closeEditModal()">Cancel</button>
@@ -653,8 +685,64 @@
     } catch(ex) { console.warn('Sheet sync failed:', ex.message); }
   }
 
+  // ── Dropdown options (built from existing data) ──
+  function uniqueValues(field, normalizeFn) {
+    const map = new Map();
+    allData.forEach(r => {
+      let v = (r[field] || '').toString().trim();
+      if (!v) return;
+      if (normalizeFn) v = normalizeFn(v);
+      const key = v.toLowerCase();
+      if (!map.has(key)) map.set(key, v);
+    });
+    return [...map.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  function populateSelect(selectId, otherId, values, currentValue) {
+    const sel = document.getElementById(selectId);
+    const other = document.getElementById(otherId);
+    sel.innerHTML = values.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('')
+      + '<option value="__other__">+ Add new...</option>';
+    other.style.display = 'none';
+    other.value = '';
+    if (currentValue) {
+      const match = values.find(v => v.toLowerCase() === currentValue.toLowerCase());
+      if (match) {
+        sel.value = match;
+      } else {
+        sel.value = '__other__';
+        other.style.display = 'block';
+        other.value = currentValue;
+      }
+    } else {
+      sel.selectedIndex = 0;
+    }
+  }
+
+  function handleSelectOther(selectEl, otherId) {
+    document.getElementById(otherId).style.display = selectEl.value === '__other__' ? 'block' : 'none';
+  }
+
+  function getFieldValue(selectId, otherId) {
+    const sel = document.getElementById(selectId);
+    if (sel.value === '__other__') return document.getElementById(otherId).value.trim();
+    return sel.value.trim();
+  }
+
+  function populateModalDropdowns(prefix, current) {
+    populateSelect(`${prefix}Shift`, `${prefix}ShiftOther`, uniqueValues('Shift', normalizeShift), current ? normalizeShift(current.Shift) : '');
+    populateSelect(`${prefix}Role`, `${prefix}RoleOther`, uniqueValues('Role'), current ? current.Role : '');
+    populateSelect(`${prefix}Project`, `${prefix}ProjectOther`, uniqueValues('Project', normalizeProject), current ? normalizeProject(current.Project) : '');
+    populateSelect(`${prefix}Location`, `${prefix}LocationOther`, uniqueValues('Location'), current ? current.Location : '');
+  }
+
   // ── Add ──
-  function openAddModal() { document.getElementById('addFormError').style.display='none'; document.getElementById('addEmployeeForm').reset(); document.getElementById('addModalOverlay').style.display='flex'; }
+  function openAddModal() {
+    document.getElementById('addFormError').style.display = 'none';
+    document.getElementById('addEmployeeForm').reset();
+    populateModalDropdowns('add', null);
+    document.getElementById('addModalOverlay').style.display = 'flex';
+  }
   function closeAddModal() { document.getElementById('addModalOverlay').style.display='none'; }
   document.getElementById('addModalOverlay').addEventListener('click', e => { if (e.target.id==='addModalOverlay') closeAddModal(); });
 
@@ -667,12 +755,15 @@
     const payload = {
       'Name': document.getElementById('addName').value.trim(),
       'National ID': document.getElementById('addNationalId').value.trim(),
-      'Shift': document.getElementById('addShift').value.trim(),
-      'Role': document.getElementById('addRole').value.trim(),
-      'Project': document.getElementById('addProject').value.trim(),
+      'Shift': getFieldValue('addShift', 'addShiftOther'),
+      'Role': getFieldValue('addRole', 'addRoleOther'),
+      'Project': getFieldValue('addProject', 'addProjectOther'),
       'Status': document.getElementById('addStatus').value,
-      'Location': document.getElementById('addLocation').value.trim()
+      'Location': getFieldValue('addLocation', 'addLocationOther')
     };
+    if (!payload.Shift || !payload.Role || !payload.Project || !payload.Location) {
+      errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
+    }
     btn.disabled=true; btn.textContent='Adding...';
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, { method:'POST', headers: authHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify(payload) });
@@ -693,11 +784,8 @@
     document.getElementById('editFormError').style.display = 'none';
     document.getElementById('editNationalId').value = emp['National ID'] || '';
     document.getElementById('editName').value = emp['Name'] || '';
-    document.getElementById('editShift').value = emp['Shift'] || '';
-    document.getElementById('editRole').value = emp['Role'] || '';
-    document.getElementById('editProject').value = emp['Project'] || '';
+    populateModalDropdowns('edit', emp);
     document.getElementById('editStatus').value = isActive(emp['Status']) ? 'working' : 'inactive';
-    document.getElementById('editLocation').value = emp['Location'] || '';
     document.getElementById('editModalOverlay').style.display = 'flex';
   }
 
@@ -713,12 +801,15 @@
     const nationalId = document.getElementById('editNationalId').value;
     const payload = {
       'Name': document.getElementById('editName').value.trim(),
-      'Shift': document.getElementById('editShift').value.trim(),
-      'Role': document.getElementById('editRole').value.trim(),
-      'Project': document.getElementById('editProject').value.trim(),
+      'Shift': getFieldValue('editShift', 'editShiftOther'),
+      'Role': getFieldValue('editRole', 'editRoleOther'),
+      'Project': getFieldValue('editProject', 'editProjectOther'),
       'Status': document.getElementById('editStatus').value,
-      'Location': document.getElementById('editLocation').value.trim()
+      'Location': getFieldValue('editLocation', 'editLocationOther')
     };
+    if (!payload.Shift || !payload.Role || !payload.Project || !payload.Location) {
+      errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
+    }
     btn.disabled=true; btn.textContent='Saving...';
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}?National ID=eq.${encodeURIComponent(nationalId)}`, {
