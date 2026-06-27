@@ -159,12 +159,37 @@
   .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .form-error { background: var(--bad-dim); border: 1px solid rgba(240,85,107,0.3); color: var(--bad); font-size: 12.5px; font-weight: 500; padding: 9px 12px; border-radius: 6px; margin-bottom: 1rem; display: none; }
 
+  /* ── Tabs ── */
+  .nav-tabs { display: flex; align-items: center; gap: 4px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 3px; }
+  .nav-tab { background: transparent; border: none; border-radius: 6px; color: var(--text-1); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 16px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+  .nav-tab:hover { color: var(--text-0); }
+  .nav-tab.active { background: var(--signal); color: #04181d; }
+
+  /* ── Sheets view ── */
+  .sheets-toolbar { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-card); }
+  .sheets-category { margin-bottom: 1.75rem; }
+  .sheets-category-head { display: flex; align-items: center; gap: 10px; margin-bottom: 0.9rem; }
+  .sheets-category-title { font-size: 13px; font-weight: 700; color: var(--text-0); letter-spacing: -0.1px; }
+  .sheets-category-count { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-2); background: var(--bg-2); border: 1px solid var(--line); padding: 2px 9px; border-radius: 20px; font-weight: 600; }
+  .sheets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .sheet-card { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.1rem; display: flex; align-items: center; gap: 12px; text-decoration: none; box-shadow: var(--shadow-card); transition: transform 0.15s ease, border-color 0.15s ease; }
+  .sheet-card:hover { transform: translateY(-2px); border-color: var(--signal-line); }
+  .sheet-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--signal-dim); border: 1px solid var(--signal-line); color: var(--signal); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sheet-icon.form { background: var(--ok-dim); border-color: rgba(61,214,140,0.3); color: var(--ok); }
+  .sheet-info { flex: 1; min-width: 0; }
+  .sheet-name { font-size: 13.5px; font-weight: 600; color: var(--text-0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sheet-type { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-2); letter-spacing: 0.5px; text-transform: uppercase; margin-top: 2px; }
+  .sheet-open { color: var(--text-2); flex-shrink: 0; transition: color 0.15s, transform 0.15s; }
+  .sheet-card:hover .sheet-open { color: var(--signal); transform: translate(2px,-2px); }
+  .sheets-empty { text-align: center; padding: 4rem; color: var(--text-1); font-size: 14px; }
+
   @media (max-width: 640px) {
     main { padding: 1.25rem; }
     nav { padding: 0 1.25rem; }
     .nav-brand-text .subtitle { display: none; }
     .nav-user { display: none; }
     .form-row { grid-template-columns: 1fr; }
+    .nav-tab span.tab-label-full { display: none; }
   }
 </style>
 </head>
@@ -203,6 +228,16 @@
         <span class="subtitle">WORKFORCE DASHBOARD</span>
       </div>
     </div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="tabStaffBtn" onclick="showView('staff')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <span class="tab-label-full">Staff</span>
+      </button>
+      <button class="nav-tab" id="tabSheetsBtn" onclick="showView('sheets')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="tab-label-full">Sheets</span>
+      </button>
+    </div>
     <div class="nav-left">
       <span class="nav-user mono" id="navUserEmail"></span>
       <div class="nav-info mono" id="lastSync">Loading...</div>
@@ -211,6 +246,7 @@
   </nav>
 
   <main>
+    <div id="staffView">
     <div class="error-banner" id="errorBanner"></div>
     <div class="success-banner" id="successBanner"></div>
 
@@ -295,6 +331,17 @@
         <span id="footerInfo">—</span>
         <span id="footerTime">—</span>
       </div>
+    </div>
+    </div>
+
+    <div id="sheetsView" style="display:none">
+      <div class="sheets-toolbar">
+        <div class="search-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="sheetsSearchInput" placeholder="Search sheets and forms..." oninput="renderSheets()">
+        </div>
+      </div>
+      <div id="sheetsContainer"></div>
     </div>
   </main>
 </div>
@@ -667,6 +714,86 @@
       await loadData();
     } catch(ex) { errDiv.textContent=ex.message; errDiv.style.display='block'; }
     finally { btn.disabled=false; btn.textContent='Save changes'; }
+  }
+  // ── Sheets directory ──
+  const SHEETS_DATA = [
+    { category: 'Attendance', items: [
+      { name: 'GT Morning Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/11Ekahw8ZD6xJfFw0MVu8dKIETMP2mYXXDpV6YPaIHfk/edit?gid=1657040379' },
+      { name: 'GT Night Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1qWtkAMkB8aJMyGqNAivuhl8P2bmTfLpY6yLqu4nQPAQ/edit?gid=1218236832' },
+      { name: 'Over Night Attendance (Master Sheet)', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1SXlXRnAJk0f2tbNh20yZ_2EDa9bo7HQXaQ-CSlVpxKY/edit?pli=1&gid=999998182' },
+      { name: 'S.F Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1PPASHHRwPtyaN7_hiDTjVNihqGv9ZxXmN0_LfaNh32Q/edit?gid=735554126' },
+      { name: 'AVP Morning Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1xydLswJHJPS6Vry7P7XcjUMdTRJK1vQ-VatN4B4chLI/edit' },
+      { name: 'AVP Night Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1u8wcQg38rRIoE_tnmRi0xD_OCq2XwVQWQj3Eg2mXh4g/edit?gid=15901893' },
+      { name: 'AVP Overnight Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1-SIZHQfvsBkEvs_5KRjztTMbOHGDCpN0L38Qp0lvXWI/edit' },
+      { name: 'UAE Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1TEOmdfUsFy-p29WB9ttj79zMsbCV344r7uNSbouEWFs/edit?gid=507444073' },
+      { name: 'Mapping Overnight Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1NEX_9R-kZYlQT8FLks3_1XnDn9JDr8VCyrvNl7hyd44/edit?gid=59640710' },
+      { name: 'Labelerslist Attendance', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1J_BvZ6AHD4HcpTVf_iACyTJhcu0hx7ehczucAhN2QhM/edit?gid=1562394029' },
+      { name: 'Attendance delays OP', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1DUFehN3sGupWwkIyZO44IL1izYUSbXggtCUiUbxcxUs/edit?gid=0' },
+    ]},
+    { category: 'Forms', items: [
+      { name: 'Form.meti portal', type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSd2Krysi6kd_KWap5iXtNzCY4S_0Pg_HPVHRi4egEAfIoQ8nA/viewform?fbzx=1749840446210905879' },
+      { name: 'Ticket IT Form', type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqBseVUc2XpLiUQiVakwohlUQzcyQjVEVFhIN0gxVzlFSzJaVzU1S0U3Ni4u&route=shorturl' },
+      { name: 'HR Coordination Form', type: 'form', url: 'https://docs.google.com/forms/d/1usvBwXC1kRc2QIF5hgu1fBJVVErhRlPvvj0CwX7GC5o/edit' },
+      { name: 'Official Documents Request Form', type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqleEX5dr1YZEmF92kQyPQQFUMU1MTU5TSjc0NEdETlhJSjNGWTlBS1JCUSQlQCN0PWcu&origin=QRCode&route=shorturl' },
+      { name: 'Job Application Form', type: 'form', url: 'https://forms.office.com/r/r7c0wmSYxB' },
+      { name: 'Training Feedback Form', type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSdtzKD3ZI3z6s32rPbayAZf4gKOaCCfWvM1k5BZAq1wkY14CQ/viewform?pli=1' },
+      { name: 'Metiportal_Admin', type: 'form', url: 'https://portal-meti.microengineering.ca/' },
+    ]},
+    { category: 'Operations & Reports', items: [
+      { name: 'Yupikey sheet', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1RvdCM39Dz4-IT2k-w9sj0Ks7ExvdDACYGTceDDa41ks/edit?gid=282349957' },
+      { name: 'Onboarding', type: 'sheet', url: 'https://microengineeringgroup-my.sharepoint.com/:x:/r/personal/mohamed_ayman_microengineering_ca/_layouts/15/Doc.aspx?sourcedoc=%7BDF1DED35-1ED4-4803-A7DA-A14D4BE78AFA%7D&file=Labeling_Training_OnBoarding_Process.xlsx&action=default&mobileredirect=true' },
+      { name: 'Over Time Operation', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1R2045uoA6ICYqEuLB-wC2rsqbcM9lMbaFmM-nCw_Jko/edit?gid=682881054' },
+      { name: 'IT Issues Follow Up', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1YRA6octdldd3QTQtJiXX9bkueGPfR7-i9I4QHGQfUU0/edit?usp=drivesdk' },
+      { name: 'Labeler OverTime', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1W2zitOpu5hamNuGQVVfZr0gCNqtsNEVntVes-80CoBc/edit?gid=383404338' },
+      { name: 'Violation Report', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1pQ6hxfVJmkaS0VtxyWhAG40Dj2HOY053SMgYm3OTdUg/edit?gid=0' },
+      { name: 'الأوراق المسلمة', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1V_FnuaBV4s9vLHYizGwPl-AFc5MMA1eviSw7iouxV6Q/edit?gid=0' },
+      { name: 'Master New Hire - Dataset', type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1t3IATJAHtlrMur9QTuqcrbzEypi_oLOwnWA9c8WmrRw/edit?gid=0' },
+    ]},
+  ];
+
+  function showView(view) {
+    const isStaff = view === 'staff';
+    document.getElementById('staffView').style.display = isStaff ? 'block' : 'none';
+    document.getElementById('sheetsView').style.display = isStaff ? 'none' : 'block';
+    document.getElementById('tabStaffBtn').classList.toggle('active', isStaff);
+    document.getElementById('tabSheetsBtn').classList.toggle('active', !isStaff);
+    if (!isStaff) renderSheets();
+  }
+
+  function sheetIconSvg(type) {
+    if (type === 'form') return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>';
+    return '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>';
+  }
+
+  function renderSheets() {
+    const q = (document.getElementById('sheetsSearchInput').value || '').toLowerCase();
+    const container = document.getElementById('sheetsContainer');
+    let anyResults = false;
+    let html = '';
+    SHEETS_DATA.forEach(group => {
+      const items = group.items.filter(it => !q || it.name.toLowerCase().includes(q));
+      if (items.length === 0) return;
+      anyResults = true;
+      html += `<div class="sheets-category">
+        <div class="sheets-category-head">
+          <span class="sheets-category-title">${escapeHTML(group.category)}</span>
+          <span class="sheets-category-count">${items.length}</span>
+        </div>
+        <div class="sheets-grid">
+          ${items.map(it => `
+            <a class="sheet-card" href="${escapeHTML(it.url)}" target="_blank" rel="noopener noreferrer">
+              <div class="sheet-icon ${it.type === 'form' ? 'form' : ''}">${sheetIconSvg(it.type)}</div>
+              <div class="sheet-info">
+                <div class="sheet-name">${escapeHTML(it.name)}</div>
+                <div class="sheet-type">${it.type === 'form' ? 'Form' : 'Sheet'}</div>
+              </div>
+              <svg class="sheet-open" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            </a>
+          `).join('')}
+        </div>
+      </div>`;
+    });
+    container.innerHTML = anyResults ? html : `<div class="sheets-empty">No sheets match your search</div>`;
   }
 </script>
 </body>
