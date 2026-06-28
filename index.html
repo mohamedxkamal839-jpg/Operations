@@ -121,6 +121,9 @@
   td { padding: 13px 16px; font-size: 13.5px; border-bottom: 1px solid var(--line-soft); color: var(--text-0); white-space: nowrap; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg-2); }
+  tr.optimistic td { opacity: 0.6; }
+  tr.optimistic-new td { background: rgba(79,209,232,0.04); }
+  tr.optimistic-delete td { opacity: 0.3; text-decoration: line-through; }
 
   .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
   .badge-active { background: var(--ok-dim); color: var(--ok); }
@@ -157,6 +160,12 @@
 
   .error-banner { background: var(--bad-dim); border: 1px solid rgba(240,85,107,0.3); border-radius: 10px; padding: 1rem 1.5rem; color: var(--bad); font-size: 14px; font-weight: 500; margin-bottom: 1.5rem; display: none; }
   .success-banner { background: var(--ok-dim); border: 1px solid rgba(61,214,140,0.3); border-radius: 10px; padding: 1rem 1.5rem; color: var(--ok); font-size: 14px; font-weight: 500; margin-bottom: 1.5rem; display: none; }
+
+  /* ── Sync indicator ── */
+  .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 5px; animation: pulse-ok 2s ease-in-out infinite; }
+  .sync-dot.syncing { background: var(--signal); animation: spin 0.8s linear infinite; width: 9px; height: 9px; border: 2px solid var(--line); border-top-color: var(--signal); border-radius: 50%; }
+  .sync-dot.error { background: var(--bad); animation: none; }
+  @keyframes pulse-ok { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
   /* ── Modals ── */
   .modal-overlay { position: fixed; inset: 0; background: rgba(4,6,9,0.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
@@ -200,7 +209,6 @@
   .sheet-card:hover .sheet-open { color: var(--signal); transform: translate(2px,-2px); }
   .sheets-empty { text-align: center; padding: 4rem; color: var(--text-1); font-size: 14px; }
 
-  /* ── Sheet source badge ── */
   .source-badge { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--ok); background: var(--ok-dim); border: 1px solid rgba(61,214,140,0.25); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.5px; }
 
   @media (max-width: 640px) {
@@ -263,7 +271,7 @@
     <div class="nav-left">
       <span class="nav-user mono" id="navUserEmail"></span>
       <span class="source-badge">GOOGLE SHEETS</span>
-      <div class="nav-info mono" id="lastSync">Loading...</div>
+      <div class="nav-info mono" id="lastSync"><span class="sync-dot" id="syncDot"></span><span id="syncText">Loading...</span></div>
       <button class="btn-danger" onclick="handleLogout()">Sign out</button>
     </div>
   </nav>
@@ -314,7 +322,7 @@
           <option value="working">Working</option>
           <option value="inactive">Inactive</option>
         </select>
-        <button class="btn-ghost" onclick="loadData()">
+        <button class="btn-ghost" onclick="loadData(true)">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
           Refresh
         </button>
@@ -494,24 +502,22 @@
 // ════════════════════════════════════════════════════════════════
 // CONFIG
 // ════════════════════════════════════════════════════════════════
-
 const SUPABASE_URL      = 'https://dibhtnnkhakcygzpenwg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
 const SESSION_KEY       = 'supabaseSession';
-
-// ⚠️ ضع هنا الـ URL بتاع Google Apps Script بعد ما تعمل Deploy
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwWi3EDRVHeEDK60Lt2t21o8QyG69OiN75G6CHLXcBlpaSoGzkUABPJEjCVQvnblnuH1w/exec';
+const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbwSJihUalj53vtJUlS_9TQZdKDyMxLsx6inxDMzEmb8aihACSin5DMpLcU99R4M4eAbaQ/exec';
 
 // ════════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════════
-let allData       = [];
-let sortCol       = '';
-let sortAsc       = true;
-let pollTimer     = null;
-let session       = null;
+let allData          = [];
+let sortCol          = '';
+let sortAsc          = true;
+let pollTimer        = null;
+let session          = null;
 let deleteTargetId   = null;
 let deleteTargetName = null;
+let isSyncing        = false;
 
 // ════════════════════════════════════════════════════════════════
 // UTILS
@@ -523,6 +529,16 @@ function escapeHTML(v) {
 function normalizeShift(v)   { if (!v) return ''; const t = String(v).trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : ''; }
 function normalizeProject(v) { if (!v) return ''; const t = String(v).trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
 function isActive(s)         { if (!s) return false; const v = s.toLowerCase(); return v.includes('working') || v.includes('active'); }
+
+// ════════════════════════════════════════════════════════════════
+// SYNC INDICATOR
+// ════════════════════════════════════════════════════════════════
+function setSyncState(state, text) {
+  const dot  = document.getElementById('syncDot');
+  const span = document.getElementById('syncText');
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  span.textContent = text;
+}
 
 // ════════════════════════════════════════════════════════════════
 // AUTH (Supabase)
@@ -580,34 +596,49 @@ function showDashboard() {
   loadData(); startPolling();
 }
 
-function startPolling() { stopPolling(); pollTimer = setInterval(() => { getSession() ? loadData() : stopPolling(); }, 60000); }
+function startPolling() { stopPolling(); pollTimer = setInterval(() => { getSession() ? loadData() : stopPolling(); }, 120000); }
 function stopPolling()  { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
 // ════════════════════════════════════════════════════════════════
 // DATA — Google Sheets via Apps Script
 // ════════════════════════════════════════════════════════════════
-async function loadData() {
+
+// أول تحميل: يشغّل الـ loading screen
+// background refresh: يحدّث الداتا في الخلفية بدون إخفاء الجدول
+async function loadData(forceVisible = false) {
   if (!getSession()) return;
-  document.getElementById('loadingState').style.display  = 'block';
-  document.getElementById('empTable').style.display      = 'none';
-  document.getElementById('emptyState').style.display    = 'none';
-  document.getElementById('errorBanner').style.display   = 'none';
-  document.getElementById('lastSync').textContent        = 'Loading...';
+  if (isSyncing) return; // منع التحميل المتزامن
+
+  const isFirstLoad = allData.length === 0;
+
+  if (isFirstLoad || forceVisible) {
+    document.getElementById('loadingState').style.display  = 'block';
+    document.getElementById('empTable').style.display      = 'none';
+    document.getElementById('emptyState').style.display    = 'none';
+    document.getElementById('errorBanner').style.display   = 'none';
+  }
+
+  setSyncState('syncing', 'Syncing...');
+  isSyncing = true;
+
   try {
-    allData = await fetchFromSheet();
-    populateFilters(); applyFilters();
-    document.getElementById('lastSync').textContent = `Updated ${new Date().toLocaleTimeString('en-US')}`;
+    const rows = await fetchFromSheet();
+    allData = rows;
+    populateFilters();
+    applyFilters();
+    setSyncState('ok', `Updated ${new Date().toLocaleTimeString('en-US')}`);
   } catch (ex) {
-    document.getElementById('loadingState').style.display = 'none';
-    showError('Failed to load: ' + escapeHTML(ex.message));
-    document.getElementById('lastSync').textContent = 'Sync failed';
+    if (isFirstLoad) {
+      document.getElementById('loadingState').style.display = 'none';
+      showError('Failed to load: ' + escapeHTML(ex.message));
+    }
+    setSyncState('error', 'Sync failed');
+  } finally {
+    isSyncing = false;
   }
 }
 
 async function fetchFromSheet() {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-    throw new Error('Please set APPS_SCRIPT_URL in the code first.');
-  }
   const res  = await fetch(APPS_SCRIPT_URL);
   if (!res.ok) throw new Error(`Sheet fetch error: ${res.status}`);
   const json = await res.json();
@@ -616,17 +647,50 @@ async function fetchFromSheet() {
 }
 
 async function callScript(action, payload) {
-  if (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') throw new Error('Apps Script URL not configured.');
-  const res  = await fetch(APPS_SCRIPT_URL, {
+  const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' }, // Apps Script needs text/plain for POST
+    headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ action, ...payload })
   });
-  // no-cors workaround: Apps Script with CORS enabled returns JSON
   let json;
-  try { json = await res.json(); } catch { return { success: true }; } // no-cors fallback
+  try { json = await res.json(); } catch { return { success: true }; }
   if (json && json.error) throw new Error(json.error);
   return json;
+}
+
+// ════════════════════════════════════════════════════════════════
+// OPTIMISTIC UPDATES — لحظية بدون انتظار السيرفر
+// ════════════════════════════════════════════════════════════════
+
+// Add: أضف فوراً للـ local data ثم ابعت للسيرفر في الخلفية
+function optimisticAdd(payload) {
+  allData.push(payload);
+  populateFilters();
+  applyFilters();
+}
+
+// Edit: عدّل في الـ local data فوراً
+function optimisticEdit(nationalId, payload) {
+  const idx = allData.findIndex(r => String(r['National ID']) === String(nationalId));
+  if (idx !== -1) {
+    allData[idx] = { ...allData[idx], ...payload };
+    populateFilters();
+    applyFilters();
+  }
+}
+
+// Delete: احذف من الـ local data فوراً
+function optimisticDelete(nationalId) {
+  allData = allData.filter(r => String(r['National ID']) !== String(nationalId));
+  populateFilters();
+  applyFilters();
+}
+
+// Rollback: ارجع للداتا القديمة لو السيرفر رجّع error
+function rollback(previousData) {
+  allData = previousData;
+  populateFilters();
+  applyFilters();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -779,7 +843,7 @@ function populateModalDropdowns(prefix, current) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// ADD
+// ADD — Optimistic
 // ════════════════════════════════════════════════════════════════
 function openAddModal() {
   document.getElementById('addFormError').style.display = 'none';
@@ -796,6 +860,7 @@ async function handleAddEmployee(e) {
   const errDiv = document.getElementById('addFormError');
   const btn    = document.getElementById('addSubmitBtn');
   errDiv.style.display = 'none';
+
   const payload = {
     'National ID': document.getElementById('addNationalId').value.trim(),
     'Name':        document.getElementById('addName').value.trim(),
@@ -805,21 +870,36 @@ async function handleAddEmployee(e) {
     'Status':      document.getElementById('addStatus').value,
     'Location':    getFieldValue('addLocation', 'addLocationOther')
   };
+
   if (!payload['Shift'] || !payload['Role'] || !payload['Project'] || !payload['Location']) {
     errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
   }
-  btn.disabled=true; btn.textContent='Adding...';
-  try {
-    await callScript('add', payload);
-    closeAddModal();
-    showSuccess(`${payload['Name']||'Employee'} added successfully.`);
-    await loadData();
-  } catch(ex) { errDiv.textContent=ex.message; errDiv.style.display='block'; }
-  finally { btn.disabled=false; btn.textContent='Add employee'; }
+
+  // تحقق محلي من تكرار الـ ID قبل الإرسال
+  if (allData.some(r => String(r['National ID']).trim() === payload['National ID'])) {
+    errDiv.textContent = 'National ID already exists.'; errDiv.style.display = 'block'; return;
+  }
+
+  // ── OPTIMISTIC: أغلق المودال وأضف فوراً ──
+  closeAddModal();
+  showSuccess(`${payload['Name']||'Employee'} added successfully.`);
+  const previousData = [...allData];
+  optimisticAdd(payload);
+
+  btn.disabled = true;
+  // ابعت للسيرفر في الخلفية
+  callScript('add', payload).catch(ex => {
+    // فشل السيرفر: ارجع للداتا القديمة
+    rollback(previousData);
+    showError('Add failed: ' + ex.message);
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'Add employee';
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
-// EDIT
+// EDIT — Optimistic
 // ════════════════════════════════════════════════════════════════
 function openEditModal(nationalId) {
   const emp = allData.find(r => String(r['National ID']) === String(nationalId));
@@ -840,6 +920,7 @@ async function handleEditEmployee(e) {
   const errDiv     = document.getElementById('editFormError');
   const btn        = document.getElementById('editSubmitBtn');
   errDiv.style.display = 'none';
+
   const nationalId = document.getElementById('editNationalId').value;
   const payload    = {
     'National ID': nationalId,
@@ -850,28 +931,35 @@ async function handleEditEmployee(e) {
     'Status':      document.getElementById('editStatus').value,
     'Location':    getFieldValue('editLocation', 'editLocationOther')
   };
+
   if (!payload['Shift'] || !payload['Role'] || !payload['Project'] || !payload['Location']) {
     errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
   }
-  btn.disabled=true; btn.textContent='Saving...';
-  try {
-    await callScript('edit', payload);
-    closeEditModal();
-    showSuccess(`${payload['Name']||'Employee'} updated successfully.`);
-    await loadData();
-  } catch(ex) { errDiv.textContent=ex.message; errDiv.style.display='block'; }
-  finally { btn.disabled=false; btn.textContent='Save changes'; }
+
+  // ── OPTIMISTIC: أغلق وعدّل فوراً ──
+  closeEditModal();
+  showSuccess(`${payload['Name']||'Employee'} updated successfully.`);
+  const previousData = [...allData];
+  optimisticEdit(nationalId, payload);
+
+  btn.disabled = true;
+  callScript('edit', payload).catch(ex => {
+    rollback(previousData);
+    showError('Edit failed: ' + ex.message);
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
-// DELETE
+// DELETE — Optimistic
 // ════════════════════════════════════════════════════════════════
 function openDeleteModal(nationalId, name) {
   deleteTargetId   = nationalId;
   deleteTargetName = name;
   document.getElementById('deleteEmpName').textContent    = name || 'this employee';
   document.getElementById('deleteConfirmBtn').disabled    = false;
-  document.getElementById('deleteConfirmBtn').textContent = 'Delete';
   document.getElementById('deleteModalOverlay').style.display = 'flex';
 }
 function closeDeleteModal() {
@@ -883,18 +971,20 @@ document.getElementById('deleteModalOverlay').addEventListener('click', e => { i
 async function confirmDelete() {
   if (!deleteTargetId) return;
   if (!getSession()) { showError('Session expired.'); closeDeleteModal(); return; }
-  const btn = document.getElementById('deleteConfirmBtn');
-  btn.disabled = true; btn.textContent = 'Deleting...';
-  try {
-    await callScript('delete', { 'National ID': deleteTargetId });
-    const name = deleteTargetName;
-    closeDeleteModal();
-    showSuccess(`${name||'Employee'} deleted successfully.`);
-    await loadData();
-  } catch(ex) {
-    closeDeleteModal();
+
+  const id   = deleteTargetId;
+  const name = deleteTargetName;
+
+  // ── OPTIMISTIC: أغلق واحذف فوراً ──
+  closeDeleteModal();
+  showSuccess(`${name||'Employee'} deleted successfully.`);
+  const previousData = [...allData];
+  optimisticDelete(id);
+
+  callScript('delete', { 'National ID': id }).catch(ex => {
+    rollback(previousData);
     showError('Delete failed: ' + ex.message);
-  }
+  });
 }
 
 // ════════════════════════════════════════════════════════════════
