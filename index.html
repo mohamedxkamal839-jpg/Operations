@@ -489,7 +489,7 @@
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
   const TABLE = 'employees';
   const SESSION_KEY = 'supabaseSession';
-  const SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzNaerzshno8ZvIpP9dRQGxas0Q3jX57ohH5_KzRoaUXHidf_kuSmdaJ7sOVSpE-HlJ/exec';
+  const SHEET_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzh6r7rGmbrUU45lDUOrXLlRvoxzF6aIBY2FvXG3ZZu3nlrCT8tZZfYW9LQjJuS56e9rA/exec';
 
   let allData = [];
   let sortCol = '';
@@ -727,9 +727,14 @@
 
   function sortBy(col) { if (sortCol===col) sortAsc=!sortAsc; else { sortCol=col; sortAsc=true; } applyFilters(); }
 
-  async function syncToSheet(payload) {
+  async function syncToSheet(action, payload) {
     try {
-      await fetch(SHEET_WEBAPP_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      await fetch(SHEET_WEBAPP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, ...payload })
+      });
     } catch(ex) { console.warn('Sheet sync failed:', ex.message); }
   }
 
@@ -809,7 +814,7 @@
       const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE}`, { method:'POST', headers: authHeaders({'Content-Type':'application/json','Prefer':'return=minimal'}), body: JSON.stringify(payload) });
       if (res.status===401||res.status===403) throw new Error('Not authorized.');
       if (!res.ok) { const ex=await res.json().catch(()=>({})); throw new Error(ex.message||`Error ${res.status}`); }
-      await syncToSheet(payload);
+      await syncToSheet('add', payload);
       closeAddModal();
       showSuccess(`${payload['Name']||'Employee'} added successfully.`);
       await loadData();
@@ -859,7 +864,7 @@
       });
       if (res.status===401||res.status===403) throw new Error('Not authorized.');
       if (!res.ok) { const ex=await res.json().catch(()=>({})); throw new Error(ex.message||`Error ${res.status}`); }
-      await syncToSheet({ 'National ID': nationalId, ...payload });
+      await syncToSheet('edit', { 'National ID': nationalId, ...payload });
       closeEditModal();
       showSuccess(`${payload['Name']||'Employee'} updated successfully.`);
       await loadData();
@@ -898,6 +903,7 @@
       });
       if (res.status === 401 || res.status === 403) throw new Error('Not authorized.');
       if (!res.ok) { const ex = await res.json().catch(() => ({})); throw new Error(ex.message || `Error ${res.status}`); }
+      await syncToSheet('delete', { 'National ID': deleteTargetId });
       const name = deleteTargetName;
       closeDeleteModal();
       showSuccess(`${name || 'Employee'} deleted successfully.`);
