@@ -26,6 +26,9 @@
     --ok-dim: rgba(61, 214, 140, 0.12);
     --bad: #f0556b;
     --bad-dim: rgba(240, 85, 107, 0.12);
+    --warn: #f59e0b;
+    --warn-dim: rgba(245, 158, 11, 0.12);
+    --warn-line: rgba(245, 158, 11, 0.3);
     --shadow-card: 0 1px 0 rgba(255,255,255,0.02) inset, 0 10px 30px rgba(0,0,0,0.35);
     --shadow-pop: 0 20px 60px rgba(0,0,0,0.5);
   }
@@ -87,10 +90,12 @@
   .stat-value.accent-signal { color: var(--signal); }
   .stat-value.accent-ok { color: var(--ok); }
   .stat-value.accent-bad { color: var(--bad); }
+  .stat-value.accent-warn { color: var(--warn); }
   .stat[data-tone="signal"] { --tint: var(--signal-dim); --tint-line: var(--signal-line); --tint-fg: var(--signal); }
   .stat[data-tone="ok"] { --tint: var(--ok-dim); --tint-line: rgba(61,214,140,0.3); --tint-fg: var(--ok); }
   .stat[data-tone="bad"] { --tint: var(--bad-dim); --tint-line: rgba(240,85,107,0.3); --tint-fg: var(--bad); }
   .stat[data-tone="neutral"] { --tint: var(--bg-2); --tint-line: var(--line); --tint-fg: var(--text-1); }
+  .stat[data-tone="warn"] { --tint: var(--warn-dim); --tint-line: var(--warn-line); --tint-fg: var(--warn); }
 
   /* ── Toolbar ── */
   .toolbar { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; box-shadow: var(--shadow-card); }
@@ -121,14 +126,12 @@
   td { padding: 13px 16px; font-size: 13.5px; border-bottom: 1px solid var(--line-soft); color: var(--text-0); white-space: nowrap; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--bg-2); }
-  tr.optimistic td { opacity: 0.6; }
-  tr.optimistic-new td { background: rgba(79,209,232,0.04); }
-  tr.optimistic-delete td { opacity: 0.3; text-decoration: line-through; }
 
   .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
   .badge-active { background: var(--ok-dim); color: var(--ok); }
   .badge-inactive { background: var(--bad-dim); color: var(--bad); }
   .badge-resigned { background: rgba(250,176,5,0.12); color: #fab005; }
+  .badge-training { background: var(--warn-dim); color: var(--warn); }
   .badge-shift { background: var(--bg-2); color: var(--text-1); border: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-weight: 500; border-radius: 5px; }
 
   .avatar { width: 28px; height: 28px; border-radius: 7px; background: var(--bg-2); border: 1px solid var(--line); color: var(--signal); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; margin-right: 11px; vertical-align: middle; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
@@ -140,6 +143,9 @@
   .btn-edit:hover { border-color: var(--signal-line); color: var(--signal); background: var(--signal-dim); }
   .btn-delete-row { background: transparent; color: var(--text-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 10px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
   .btn-delete-row:hover { border-color: var(--bad); color: var(--bad); background: var(--bad-dim); }
+  .btn-move { background: var(--warn-dim); color: var(--warn); border: 1px solid var(--warn-line); border-radius: 6px; padding: 5px 12px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .btn-move:hover { background: var(--warn); color: #1a0e00; border-color: var(--warn); }
+  .btn-move:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .loading { text-align: center; padding: 5rem; color: var(--text-1); font-size: 14px; }
   .spinner { width: 28px; height: 28px; border: 2px solid var(--line); border-top-color: var(--signal); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1.1rem; }
@@ -158,11 +164,14 @@
   .btn-confirm-delete { background: var(--bad); color: #fff; border: none; border-radius: 6px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: filter 0.15s; display: inline-flex; align-items: center; gap: 7px; }
   .btn-confirm-delete:hover { filter: brightness(1.1); }
   .btn-confirm-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-confirm-move { background: var(--warn); color: #1a0e00; border: none; border-radius: 6px; padding: 9px 18px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; cursor: pointer; transition: filter 0.15s; display: inline-flex; align-items: center; gap: 7px; }
+  .btn-confirm-move:hover { filter: brightness(1.08); }
+  .btn-confirm-move:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .error-banner { background: var(--bad-dim); border: 1px solid rgba(240,85,107,0.3); border-radius: 10px; padding: 1rem 1.5rem; color: var(--bad); font-size: 14px; font-weight: 500; margin-bottom: 1.5rem; display: none; }
   .success-banner { background: var(--ok-dim); border: 1px solid rgba(61,214,140,0.3); border-radius: 10px; padding: 1rem 1.5rem; color: var(--ok); font-size: 14px; font-weight: 500; margin-bottom: 1.5rem; display: none; }
 
-  /* ── Sync indicator ── */
+  /* ── Sync ── */
   .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 5px; animation: pulse-ok 2s ease-in-out infinite; }
   .sync-dot.syncing { background: var(--signal); animation: spin 0.8s linear infinite; width: 9px; height: 9px; border: 2px solid var(--line); border-top-color: var(--signal); border-radius: 50%; }
   .sync-dot.error { background: var(--bad); animation: none; }
@@ -181,6 +190,7 @@
   .form-error { background: var(--bad-dim); border: 1px solid rgba(240,85,107,0.3); color: var(--bad); font-size: 12.5px; font-weight: 500; padding: 9px 12px; border-radius: 6px; margin-bottom: 1rem; display: none; }
   .delete-modal-card { max-width: 400px; }
   .delete-warning-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--bad-dim); border: 1px solid rgba(240,85,107,0.3); display: flex; align-items: center; justify-content: center; color: var(--bad); margin: 0 auto 1.25rem; }
+  .move-warning-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--warn-dim); border: 1px solid var(--warn-line); display: flex; align-items: center; justify-content: center; color: var(--warn); margin: 0 auto 1.25rem; }
   .delete-modal-body { text-align: center; padding: 1.75rem 1.6rem 1.5rem; }
   .delete-modal-body h3 { font-size: 16px; font-weight: 700; color: var(--text-0); margin-bottom: 0.5rem; }
   .delete-modal-body p { font-size: 13.5px; color: var(--text-1); line-height: 1.6; }
@@ -191,6 +201,18 @@
   .nav-tab { background: transparent; border: none; border-radius: 6px; color: var(--text-1); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; padding: 7px 16px; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
   .nav-tab:hover { color: var(--text-0); }
   .nav-tab.active { background: var(--signal); color: #04181d; }
+  .nav-tab.active-warn { background: var(--warn); color: #1a0e00; }
+
+  /* ── Training section heading ── */
+  .section-heading { font-size: 13px; font-weight: 700; color: var(--text-0); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .section-heading .badge-training { font-size: 10px; }
+
+  /* ── Training project breakdown ── */
+  .breakdown-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+  .breakdown-card { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 1rem 1.2rem; box-shadow: var(--shadow-card); }
+  .breakdown-card-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.8px; color: var(--text-2); text-transform: uppercase; margin-bottom: 6px; }
+  .breakdown-card-value { font-size: 24px; font-weight: 800; color: var(--warn); font-variant-numeric: tabular-nums; }
+  .breakdown-card-sub { font-size: 11.5px; color: var(--text-1); margin-top: 4px; }
 
   /* ── Sheets view ── */
   .sheets-toolbar { background: var(--bg-1); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-card); }
@@ -263,6 +285,10 @@
       <button class="nav-tab active" id="tabStaffBtn" onclick="showView('staff')">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
         <span class="tab-label-full">Staff</span>
+      </button>
+      <button class="nav-tab" id="tabTrainingBtn" onclick="showView('training')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        <span class="tab-label-full">Training</span>
       </button>
       <button class="nav-tab" id="tabSheetsBtn" onclick="showView('sheets')">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -364,6 +390,91 @@
         <div class="table-footer">
           <span id="footerInfo">—</span>
           <span id="footerTime">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Training View ── -->
+    <div id="trainingView" style="display:none">
+      <div class="error-banner" id="trainingErrorBanner"></div>
+      <div class="success-banner" id="trainingSuccessBanner"></div>
+
+      <!-- Stats -->
+      <div class="stats" style="margin-bottom:1.5rem">
+        <div class="stat" data-tone="warn">
+          <div class="stat-top"><div class="stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          </div></div>
+          <div class="stat-label">Total trainees</div>
+          <div class="stat-value accent-warn" id="trnStatTotal">—</div>
+        </div>
+        <div class="stat" data-tone="signal">
+          <div class="stat-top"><div class="stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          </div></div>
+          <div class="stat-label">Projects</div>
+          <div class="stat-value accent-signal" id="trnStatProjects">—</div>
+        </div>
+        <div class="stat" data-tone="neutral">
+          <div class="stat-top"><div class="stat-icon">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </div></div>
+          <div class="stat-label">Locations</div>
+          <div class="stat-value" id="trnStatLocations">—</div>
+        </div>
+      </div>
+
+      <!-- Project Breakdown -->
+      <div class="section-heading">
+        Project breakdown
+        <span class="badge badge-training">Training</span>
+      </div>
+      <div class="breakdown-grid" id="trnBreakdown"></div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <input type="text" id="trnSearchInput" placeholder="Search by name or national ID..." oninput="renderTrainingTable()">
+        </div>
+        <select id="trnProjectFilter" onchange="renderTrainingTable()"><option value="">All projects</option></select>
+        <select id="trnShiftFilter" onchange="renderTrainingTable()"><option value="">All shifts</option></select>
+        <button class="btn-ghost" onclick="loadData(true)">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>
+          Refresh
+        </button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <span class="table-title">Training records</span>
+          <span class="table-count" id="trnRowCount">—</span>
+        </div>
+        <div class="table-wrap">
+          <div class="loading" id="trnLoadingState"><div class="spinner"></div>Loading trainees...</div>
+          <table id="trnTable" style="display:none">
+            <thead>
+              <tr>
+                <th>National ID</th>
+                <th>Name</th>
+                <th>Shift</th>
+                <th>Project</th>
+                <th>Role</th>
+                <th>Location</th>
+                <th class="no-sort"></th>
+              </tr>
+            </thead>
+            <tbody id="trnTableBody"></tbody>
+          </table>
+          <div class="empty" id="trnEmptyState" style="display:none">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <div>No trainees found</div>
+          </div>
+        </div>
+        <div class="table-footer">
+          <span id="trnFooterInfo">—</span>
+          <span id="trnFooterTime">—</span>
         </div>
       </div>
     </div>
@@ -484,9 +595,7 @@
       <button class="modal-close" onclick="closeDeleteModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div class="delete-modal-body">
-      <div class="delete-warning-icon">
-        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-      </div>
+      <div class="delete-warning-icon"><svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></div>
       <h3>Are you sure?</h3>
       <p>You're about to permanently delete <span class="delete-name-highlight" id="deleteEmpName">this employee</span>. This action cannot be undone.</p>
     </div>
@@ -500,6 +609,39 @@
   </div>
 </div>
 
+<!-- ═══════════════════════ MOVE TO EMPLOYEES MODAL ═══════════════════════ -->
+<div class="modal-overlay" id="moveModalOverlay">
+  <div class="modal-card delete-modal-card">
+    <div class="modal-header">
+      <span class="modal-title" style="color:var(--warn)">Move to Employees</span>
+      <button class="modal-close" onclick="closeMoveModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="delete-modal-body">
+      <div class="move-warning-icon">
+        <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </div>
+      <h3>Move to Employees?</h3>
+      <p>You're about to move <span class="delete-name-highlight" id="moveEmpName">this trainee</span> from Training to the Employees list. Their status will be set to <strong>Working</strong>.</p>
+    </div>
+    <div class="modal-body" style="padding-top:0">
+      <div class="form-group">
+        <label style="font-size:12px;color:var(--text-1);font-weight:500;display:block;margin-bottom:7px">Status after move</label>
+        <select id="moveStatus" class="form-control">
+          <option value="working">Working</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn-ghost" onclick="closeMoveModal()">Cancel</button>
+      <button type="button" class="btn-confirm-move" id="moveConfirmBtn" onclick="confirmMove()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        Move to Employees
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ════════════════════════════════════════════════════════════════
 // CONFIG
@@ -507,18 +649,21 @@
 const SUPABASE_URL      = 'https://dibhtnnkhakcygzpenwg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
 const SESSION_KEY       = 'supabaseSession';
-const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbwSJihUalj53vtJUlS_9TQZdKDyMxLsx6inxDMzEmb8aihACSin5DMpLcU99R4M4eAbaQ/exec';
+const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbwEZ6KQzoyXStAH6pffscK9un5I9aFSHQfQxRH-yBQsWZT_4tmmKebUNSpQUakpjfFeBg/exec';
 
 // ════════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════════
 let allData          = [];
+let trainingData     = [];
 let sortCol          = '';
 let sortAsc          = true;
 let pollTimer        = null;
 let session          = null;
 let deleteTargetId   = null;
 let deleteTargetName = null;
+let moveTargetId     = null;
+let moveTargetName   = null;
 let isSyncing        = false;
 
 // ════════════════════════════════════════════════════════════════
@@ -544,7 +689,7 @@ function setSyncState(state, text) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// AUTH (Supabase)
+// AUTH
 // ════════════════════════════════════════════════════════════════
 function getSession()   { if (session) return session; try { const r = sessionStorage.getItem(SESSION_KEY); return r ? (session = JSON.parse(r)) : null; } catch { return null; } }
 function saveSession(s) { session = s; sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)); }
@@ -584,7 +729,7 @@ async function handleLogin(e) {
 async function handleLogout() {
   stopPolling();
   try { if (getSession()) await fetch(`${SUPABASE_URL}/auth/v1/logout`, { method: 'POST', headers: authHeaders() }); } catch {}
-  clearSession(); allData = []; sortCol = ''; sortAsc = true;
+  clearSession(); allData = []; trainingData = []; sortCol = ''; sortAsc = true;
   document.getElementById('dashboardSection').style.display = 'none';
   document.getElementById('loginSection').style.display     = 'flex';
   document.getElementById('loginEmail').value    = '';
@@ -603,36 +748,41 @@ function startPolling() { stopPolling(); pollTimer = setInterval(() => { getSess
 function stopPolling()  { if (pollTimer) { clearInterval(pollTimer); pollTimer = null; } }
 
 // ════════════════════════════════════════════════════════════════
-// DATA — Google Sheets via Apps Script
+// DATA
 // ════════════════════════════════════════════════════════════════
-
-// أول تحميل: يشغّل الـ loading screen
-// background refresh: يحدّث الداتا في الخلفية بدون إخفاء الجدول
 async function loadData(forceVisible = false) {
   if (!getSession()) return;
-  if (isSyncing) return; // منع التحميل المتزامن
+  if (isSyncing) return;
 
-  const isFirstLoad = allData.length === 0;
+  const isFirstLoad = allData.length === 0 && trainingData.length === 0;
 
   if (isFirstLoad || forceVisible) {
-    document.getElementById('loadingState').style.display  = 'block';
-    document.getElementById('empTable').style.display      = 'none';
-    document.getElementById('emptyState').style.display    = 'none';
-    document.getElementById('errorBanner').style.display   = 'none';
+    document.getElementById('loadingState').style.display    = 'block';
+    document.getElementById('empTable').style.display        = 'none';
+    document.getElementById('emptyState').style.display      = 'none';
+    document.getElementById('errorBanner').style.display     = 'none';
+    document.getElementById('trnLoadingState').style.display = 'block';
+    document.getElementById('trnTable').style.display        = 'none';
+    document.getElementById('trnEmptyState').style.display   = 'none';
   }
 
   setSyncState('syncing', 'Syncing...');
   isSyncing = true;
 
   try {
-    const rows = await fetchFromSheet();
-    allData = rows;
+    const json = await fetchFromSheet();
+    allData      = json.employees || [];
+    trainingData = json.training  || [];
     populateFilters();
     applyFilters();
+    populateTrainingFilters();
+    renderTrainingStats();
+    renderTrainingTable();
     setSyncState('ok', `Updated ${new Date().toLocaleTimeString('en-US')}`);
   } catch (ex) {
     if (isFirstLoad) {
-      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('loadingState').style.display    = 'none';
+      document.getElementById('trnLoadingState').style.display = 'none';
       showError('Failed to load: ' + escapeHTML(ex.message));
     }
     setSyncState('error', 'Sync failed');
@@ -646,7 +796,7 @@ async function fetchFromSheet() {
   if (!res.ok) throw new Error(`Sheet fetch error: ${res.status}`);
   const json = await res.json();
   if (json.error) throw new Error(json.error);
-  return Array.isArray(json.rows) ? json.rows : [];
+  return json;
 }
 
 async function callScript(action, payload) {
@@ -662,46 +812,53 @@ async function callScript(action, payload) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// OPTIMISTIC UPDATES — لحظية بدون انتظار السيرفر
+// OPTIMISTIC UPDATES
 // ════════════════════════════════════════════════════════════════
-
-// Add: أضف فوراً للـ local data ثم ابعت للسيرفر في الخلفية
-function optimisticAdd(payload) {
-  allData.push(payload);
-  populateFilters();
-  applyFilters();
-}
-
-// Edit: عدّل في الـ local data فوراً
+function optimisticAdd(payload) { allData.push(payload); populateFilters(); applyFilters(); }
 function optimisticEdit(nationalId, payload) {
   const idx = allData.findIndex(r => String(r['National ID']) === String(nationalId));
-  if (idx !== -1) {
-    allData[idx] = { ...allData[idx], ...payload };
-    populateFilters();
-    applyFilters();
-  }
+  if (idx !== -1) { allData[idx] = { ...allData[idx], ...payload }; populateFilters(); applyFilters(); }
 }
-
-// Delete: احذف من الـ local data فوراً
-function optimisticDelete(nationalId) {
-  allData = allData.filter(r => String(r['National ID']) !== String(nationalId));
-  populateFilters();
-  applyFilters();
+function optimisticDelete(nationalId) { allData = allData.filter(r => String(r['National ID']) !== String(nationalId)); populateFilters(); applyFilters(); }
+function optimisticMoveTrainee(nationalId) {
+  trainingData = trainingData.filter(r => String(r['National ID']) !== String(nationalId));
+  populateTrainingFilters(); renderTrainingStats(); renderTrainingTable();
 }
-
-// Rollback: ارجع للداتا القديمة لو السيرفر رجّع error
-function rollback(previousData) {
-  allData = previousData;
-  populateFilters();
-  applyFilters();
+function rollback(previousEmp, previousTrn) {
+  if (previousEmp !== undefined) { allData = previousEmp; populateFilters(); applyFilters(); }
+  if (previousTrn !== undefined) { trainingData = previousTrn; populateTrainingFilters(); renderTrainingStats(); renderTrainingTable(); }
 }
 
 // ════════════════════════════════════════════════════════════════
-// FILTERS & TABLE
+// VIEWS
 // ════════════════════════════════════════════════════════════════
-function showError(msg)   { const b = document.getElementById('errorBanner');   b.style.display='block'; b.textContent=msg; document.getElementById('successBanner').style.display='none'; }
-function showSuccess(msg) { const b = document.getElementById('successBanner'); b.style.display='block'; b.textContent=msg; document.getElementById('errorBanner').style.display='none'; setTimeout(()=>b.style.display='none', 4000); }
+function showView(view) {
+  ['staff','training','sheets'].forEach(v => {
+    document.getElementById(v + 'View').style.display = v === view ? 'block' : 'none';
+    const btn = document.getElementById('tab' + v.charAt(0).toUpperCase() + v.slice(1) + 'Btn');
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+  if (view === 'sheets') renderSheets();
+}
 
+// ════════════════════════════════════════════════════════════════
+// BANNERS
+// ════════════════════════════════════════════════════════════════
+function showError(msg, scope) {
+  const id = scope === 'training' ? 'trainingErrorBanner' : 'errorBanner';
+  const b = document.getElementById(id); b.style.display='block'; b.textContent=msg;
+  document.getElementById(scope === 'training' ? 'trainingSuccessBanner' : 'successBanner').style.display='none';
+}
+function showSuccess(msg, scope) {
+  const id = scope === 'training' ? 'trainingSuccessBanner' : 'successBanner';
+  const b = document.getElementById(id); b.style.display='block'; b.textContent=msg;
+  document.getElementById(scope === 'training' ? 'trainingErrorBanner' : 'errorBanner').style.display='none';
+  setTimeout(()=>b.style.display='none', 4000);
+}
+
+// ════════════════════════════════════════════════════════════════
+// STAFF FILTERS & TABLE
+// ════════════════════════════════════════════════════════════════
 function populateFilters() {
   const sm = new Map();
   allData.forEach(r => { const n = normalizeShift(r['Shift']); if (n && !sm.has(n.toLowerCase())) sm.set(n.toLowerCase(), n); });
@@ -765,11 +922,7 @@ function updateStats(filtered) {
 
 function renderTable(data) {
   document.getElementById('loadingState').style.display = 'none';
-  if (data.length === 0) {
-    document.getElementById('empTable').style.display    = 'none';
-    document.getElementById('emptyState').style.display  = 'block';
-    return;
-  }
+  if (data.length === 0) { document.getElementById('empTable').style.display='none'; document.getElementById('emptyState').style.display='block'; return; }
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('empTable').style.display   = 'table';
   document.getElementById('tableBody').innerHTML = data.map(r => {
@@ -791,7 +944,7 @@ function renderTable(data) {
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
             Edit
           </button>
-          <button class="btn-delete-row" onclick="openDeleteModal('${nid}', '${escapeHTML(r['Name']||'')}')">
+          <button class="btn-delete-row" onclick="openDeleteModal('${nid}','${escapeHTML(r['Name']||'')}')">
             <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
             Delete
           </button>
@@ -802,25 +955,154 @@ function renderTable(data) {
 }
 
 // ════════════════════════════════════════════════════════════════
+// TRAINING VIEW
+// ════════════════════════════════════════════════════════════════
+function populateTrainingFilters() {
+  const pm = new Map();
+  trainingData.forEach(r => { const p = (r['Project']||'').trim(); if (p && !pm.has(p.toLowerCase())) pm.set(p.toLowerCase(), normalizeProject(p)); });
+  const projects = [...pm.values()].sort();
+
+  const sm = new Map();
+  trainingData.forEach(r => { const s = normalizeShift(r['Shift']); if (s && !sm.has(s.toLowerCase())) sm.set(s.toLowerCase(), s); });
+  const shifts = [...sm.values()].sort();
+
+  const tp = document.getElementById('trnProjectFilter'); const prevP = tp.value;
+  tp.innerHTML = '<option value="">All projects</option>';
+  projects.forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; tp.appendChild(o); });
+  if (projects.includes(prevP)) tp.value = prevP;
+
+  const ts = document.getElementById('trnShiftFilter'); const prevS = ts.value;
+  ts.innerHTML = '<option value="">All shifts</option>';
+  shifts.forEach(s => { const o=document.createElement('option'); o.value=s; o.textContent=s; ts.appendChild(o); });
+  if (shifts.includes(prevS)) ts.value = prevS;
+}
+
+function renderTrainingStats() {
+  document.getElementById('trnStatTotal').textContent     = trainingData.length;
+  document.getElementById('trnStatProjects').textContent  = new Set(trainingData.map(r=>(r['Project']||'').trim().toLowerCase()).filter(Boolean)).size;
+  document.getElementById('trnStatLocations').textContent = new Set(trainingData.map(r=>r['Location']).filter(Boolean)).size;
+
+  // Breakdown by project
+  const pm = new Map();
+  trainingData.forEach(r => {
+    const p = normalizeProject(r['Project']) || 'Unknown';
+    pm.set(p, (pm.get(p)||0) + 1);
+  });
+  const sorted = [...pm.entries()].sort((a,b) => b[1]-a[1]);
+  document.getElementById('trnBreakdown').innerHTML = sorted.map(([proj, count]) => `
+    <div class="breakdown-card">
+      <div class="breakdown-card-label">${escapeHTML(proj)}</div>
+      <div class="breakdown-card-value">${count}</div>
+      <div class="breakdown-card-sub">${count === 1 ? 'trainee' : 'trainees'}</div>
+    </div>
+  `).join('') || '<div style="color:var(--text-2);font-size:13px">No data</div>';
+}
+
+function renderTrainingTable() {
+  const search  = (document.getElementById('trnSearchInput').value||'').toLowerCase();
+  const project = document.getElementById('trnProjectFilter').value;
+  const shift   = document.getElementById('trnShiftFilter').value;
+
+  let data = trainingData.filter(r => {
+    const ms  = !search  || (r['Name']||'').toLowerCase().includes(search) || String(r['National ID']||'').includes(search);
+    const mp  = !project || (r['Project']||'').trim().toLowerCase() === project.toLowerCase();
+    const msh = !shift   || normalizeShift(r['Shift']) === shift;
+    return ms && mp && msh;
+  });
+
+  document.getElementById('trnLoadingState').style.display = 'none';
+  document.getElementById('trnRowCount').textContent = data.length + ' trainees';
+  document.getElementById('trnFooterInfo').textContent = `Showing ${data.length} of ${trainingData.length} trainees`;
+  document.getElementById('trnFooterTime').textContent = new Date().toLocaleDateString('en-US');
+
+  if (data.length === 0) {
+    document.getElementById('trnTable').style.display    = 'none';
+    document.getElementById('trnEmptyState').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('trnEmptyState').style.display = 'none';
+  document.getElementById('trnTable').style.display      = 'table';
+
+  document.getElementById('trnTableBody').innerHTML = data.map(r => {
+    const safeName = escapeHTML(r['Name']||'—');
+    const initials = escapeHTML((r['Name']||'?').split(' ').map(w=>w[0]).slice(0,2).join(''));
+    const nid      = escapeHTML(r['National ID']||'');
+    return `<tr>
+      <td class="mono" style="color:var(--text-1);font-size:12px">${escapeHTML(r['National ID']||'—')}</td>
+      <td><div class="name-cell"><div class="avatar" style="color:var(--warn)">${initials}</div><span>${safeName}</span></div></td>
+      <td><span class="badge badge-shift">${escapeHTML(normalizeShift(r['Shift'])||'—')}</span></td>
+      <td>${escapeHTML(normalizeProject(r['Project'])||'—')}</td>
+      <td style="color:var(--text-1)">${escapeHTML(r['Role']||'—')}</td>
+      <td style="color:var(--text-1)">${escapeHTML(r['Location']||'—')}</td>
+      <td>
+        <button class="btn-move" onclick="openMoveModal('${nid}','${escapeHTML(r['Name']||'')}')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          Move to Employees
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// MOVE TO EMPLOYEES
+// ════════════════════════════════════════════════════════════════
+function openMoveModal(nationalId, name) {
+  moveTargetId   = nationalId;
+  moveTargetName = name;
+  document.getElementById('moveEmpName').textContent = name || 'this trainee';
+  document.getElementById('moveStatus').value = 'working';
+  document.getElementById('moveConfirmBtn').disabled = false;
+  document.getElementById('moveModalOverlay').style.display = 'flex';
+}
+function closeMoveModal() { document.getElementById('moveModalOverlay').style.display='none'; moveTargetId=null; moveTargetName=null; }
+document.getElementById('moveModalOverlay').addEventListener('click', e => { if (e.target.id==='moveModalOverlay') closeMoveModal(); });
+
+async function confirmMove() {
+  if (!moveTargetId) return;
+  if (!getSession()) { showError('Session expired.', 'training'); closeMoveModal(); return; }
+
+  const id     = moveTargetId;
+  const name   = moveTargetName;
+  const status = document.getElementById('moveStatus').value;
+
+  closeMoveModal();
+  showSuccess(`${name||'Trainee'} moved to Employees successfully.`, 'training');
+
+  // Optimistic: امسح من Training فوراً، وأضف للـ Employees
+  const prevTrn = [...trainingData];
+  const prevEmp = [...allData];
+
+  // ابحث عن بياناته في Training
+  const trainee = trainingData.find(r => String(r['National ID']) === String(id));
+  if (trainee) {
+    const newEmp = { ...trainee, 'Status': status };
+    allData.push(newEmp);
+    populateFilters(); applyFilters();
+  }
+  optimisticMoveTrainee(id);
+
+  // ابعت للسيرفر
+  callScript('moveToEmployees', { 'National ID': id, 'Status': status }).catch(ex => {
+    rollback(prevEmp, prevTrn);
+    showError('Move failed: ' + ex.message, 'training');
+  });
+}
+
+// ════════════════════════════════════════════════════════════════
 // DROPDOWN HELPERS
 // ════════════════════════════════════════════════════════════════
 function uniqueValues(field, normalizeFn) {
   const map = new Map();
-  allData.forEach(r => {
-    let v = (r[field]||'').toString().trim();
-    if (!v) return;
-    if (normalizeFn) v = normalizeFn(v);
-    const key = v.toLowerCase();
-    if (!map.has(key)) map.set(key, v);
-  });
+  allData.forEach(r => { let v = (r[field]||'').toString().trim(); if (!v) return; if (normalizeFn) v = normalizeFn(v); const key = v.toLowerCase(); if (!map.has(key)) map.set(key, v); });
   return [...map.values()].sort((a, b) => a.localeCompare(b));
 }
 
 function populateSelect(selectId, otherId, values, currentValue) {
   const sel   = document.getElementById(selectId);
   const other = document.getElementById(otherId);
-  sel.innerHTML = values.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('')
-    + '<option value="__other__">+ Add new...</option>';
+  sel.innerHTML = values.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('') + '<option value="__other__">+ Add new...</option>';
   other.style.display = 'none'; other.value = '';
   if (currentValue) {
     const match = values.find(v => v.toLowerCase() === currentValue.toLowerCase());
@@ -828,9 +1110,7 @@ function populateSelect(selectId, otherId, values, currentValue) {
   } else { sel.selectedIndex = 0; }
 }
 
-function handleSelectOther(selectEl, otherId) {
-  document.getElementById(otherId).style.display = selectEl.value === '__other__' ? 'block' : 'none';
-}
+function handleSelectOther(selectEl, otherId) { document.getElementById(otherId).style.display = selectEl.value === '__other__' ? 'block' : 'none'; }
 
 function getFieldValue(selectId, otherId) {
   const sel = document.getElementById(selectId);
@@ -839,14 +1119,14 @@ function getFieldValue(selectId, otherId) {
 }
 
 function populateModalDropdowns(prefix, current) {
-  populateSelect(`${prefix}Shift`,    `${prefix}ShiftOther`,    uniqueValues('Shift',    normalizeShift),   current ? normalizeShift(current['Shift'])      : '');
-  populateSelect(`${prefix}Role`,     `${prefix}RoleOther`,     uniqueValues('Role'),                       current ? current['Role']                        : '');
-  populateSelect(`${prefix}Project`,  `${prefix}ProjectOther`,  uniqueValues('Project',  normalizeProject), current ? normalizeProject(current['Project'])   : '');
-  populateSelect(`${prefix}Location`, `${prefix}LocationOther`, uniqueValues('Location'),                   current ? current['Location']                    : '');
+  populateSelect(`${prefix}Shift`,    `${prefix}ShiftOther`,    uniqueValues('Shift',    normalizeShift),   current ? normalizeShift(current['Shift'])     : '');
+  populateSelect(`${prefix}Role`,     `${prefix}RoleOther`,     uniqueValues('Role'),                       current ? current['Role']                       : '');
+  populateSelect(`${prefix}Project`,  `${prefix}ProjectOther`,  uniqueValues('Project',  normalizeProject), current ? normalizeProject(current['Project'])  : '');
+  populateSelect(`${prefix}Location`, `${prefix}LocationOther`, uniqueValues('Location'),                   current ? current['Location']                   : '');
 }
 
 // ════════════════════════════════════════════════════════════════
-// ADD — Optimistic
+// ADD
 // ════════════════════════════════════════════════════════════════
 function openAddModal() {
   document.getElementById('addFormError').style.display = 'none';
@@ -877,32 +1157,21 @@ async function handleAddEmployee(e) {
   if (!payload['Shift'] || !payload['Role'] || !payload['Project'] || !payload['Location']) {
     errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
   }
-
-  // تحقق محلي من تكرار الـ ID قبل الإرسال
   if (allData.some(r => String(r['National ID']).trim() === payload['National ID'])) {
     errDiv.textContent = 'National ID already exists.'; errDiv.style.display = 'block'; return;
   }
 
-  // ── OPTIMISTIC: أغلق المودال وأضف فوراً ──
   closeAddModal();
   showSuccess(`${payload['Name']||'Employee'} added successfully.`);
   const previousData = [...allData];
   optimisticAdd(payload);
 
   btn.disabled = true;
-  // ابعت للسيرفر في الخلفية
-  callScript('add', payload).catch(ex => {
-    // فشل السيرفر: ارجع للداتا القديمة
-    rollback(previousData);
-    showError('Add failed: ' + ex.message);
-  }).finally(() => {
-    btn.disabled = false;
-    btn.textContent = 'Add employee';
-  });
+  callScript('add', payload).catch(ex => { rollback(previousData, undefined); showError('Add failed: ' + ex.message); }).finally(() => { btn.disabled = false; btn.textContent = 'Add employee'; });
 }
 
 // ════════════════════════════════════════════════════════════════
-// EDIT — Optimistic
+// EDIT
 // ════════════════════════════════════════════════════════════════
 function openEditModal(nationalId) {
   const emp = allData.find(r => String(r['National ID']) === String(nationalId));
@@ -939,36 +1208,26 @@ async function handleEditEmployee(e) {
     errDiv.textContent = 'Please fill in all fields.'; errDiv.style.display = 'block'; return;
   }
 
-  // ── OPTIMISTIC: أغلق وعدّل فوراً ──
   closeEditModal();
   showSuccess(`${payload['Name']||'Employee'} updated successfully.`);
   const previousData = [...allData];
   optimisticEdit(nationalId, payload);
 
   btn.disabled = true;
-  callScript('edit', payload).catch(ex => {
-    rollback(previousData);
-    showError('Edit failed: ' + ex.message);
-  }).finally(() => {
-    btn.disabled = false;
-    btn.textContent = 'Save changes';
-  });
+  callScript('edit', payload).catch(ex => { rollback(previousData, undefined); showError('Edit failed: ' + ex.message); }).finally(() => { btn.disabled = false; btn.textContent = 'Save changes'; });
 }
 
 // ════════════════════════════════════════════════════════════════
-// DELETE — Optimistic
+// DELETE
 // ════════════════════════════════════════════════════════════════
 function openDeleteModal(nationalId, name) {
   deleteTargetId   = nationalId;
   deleteTargetName = name;
-  document.getElementById('deleteEmpName').textContent    = name || 'this employee';
-  document.getElementById('deleteConfirmBtn').disabled    = false;
+  document.getElementById('deleteEmpName').textContent = name || 'this employee';
+  document.getElementById('deleteConfirmBtn').disabled = false;
   document.getElementById('deleteModalOverlay').style.display = 'flex';
 }
-function closeDeleteModal() {
-  document.getElementById('deleteModalOverlay').style.display = 'none';
-  deleteTargetId = null; deleteTargetName = null;
-}
+function closeDeleteModal() { document.getElementById('deleteModalOverlay').style.display='none'; deleteTargetId=null; deleteTargetName=null; }
 document.getElementById('deleteModalOverlay').addEventListener('click', e => { if (e.target.id==='deleteModalOverlay') closeDeleteModal(); });
 
 async function confirmDelete() {
@@ -978,16 +1237,12 @@ async function confirmDelete() {
   const id   = deleteTargetId;
   const name = deleteTargetName;
 
-  // ── OPTIMISTIC: أغلق واحذف فوراً ──
   closeDeleteModal();
   showSuccess(`${name||'Employee'} deleted successfully.`);
   const previousData = [...allData];
   optimisticDelete(id);
 
-  callScript('delete', { 'National ID': id }).catch(ex => {
-    rollback(previousData);
-    showError('Delete failed: ' + ex.message);
-  });
+  callScript('delete', { 'National ID': id }).catch(ex => { rollback(previousData, undefined); showError('Delete failed: ' + ex.message); });
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -995,46 +1250,46 @@ async function confirmDelete() {
 // ════════════════════════════════════════════════════════════════
 const SHEETS_DATA = [
   { category: 'Attendance', items: [
-    { name: 'GT Morning Attendance',              type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/11Ekahw8ZD6xJfFw0MVu8dKIETMP2mYXXDpV6YPaIHfk/edit?gid=1657040379' },
-    { name: 'GT Night Attendance',                type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1qWtkAMkB8aJMyGqNAivuhl8P2bmTfLpY6yLqu4nQPAQ/edit?gid=1218236832' },
+    { name: 'GT Morning Attendance',               type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/11Ekahw8ZD6xJfFw0MVu8dKIETMP2mYXXDpV6YPaIHfk/edit?gid=1657040379' },
+    { name: 'GT Night Attendance',                 type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1qWtkAMkB8aJMyGqNAivuhl8P2bmTfLpY6yLqu4nQPAQ/edit?gid=1218236832' },
     { name: 'Over Night Attendance (Master Sheet)',type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1SXlXRnAJk0f2tbNh20yZ_2EDa9bo7HQXaQ-CSlVpxKY/edit?pli=1&gid=999998182' },
-    { name: 'S.F Attendance',                     type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1PPASHHRwPtyaN7_hiDTjVNihqGv9ZxXmN0_LfaNh32Q/edit?gid=735554126' },
-    { name: 'AVP Morning Attendance',             type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1xydLswJHJPS6Vry7P7XcjUMdTRJK1vQ-VatN4B4chLI/edit' },
-    { name: 'AVP Night Attendance',               type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1u8wcQg38rRIoE_tnmRi0xD_OCq2XwVQWQj3Eg2mXh4g/edit?gid=15901893' },
-    { name: 'AVP Overnight Attendance',           type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1-SIZHQfvsBkEvs_5KRjztTMbOHGDCpN0L38Qp0lvXWI/edit' },
-    { name: 'UAE Attendance',                     type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1TEOmdfUsFy-p29WB9ttj79zMsbCV344r7uNSbouEWFs/edit?gid=507444073' },
-    { name: 'Mapping Overnight Attendance',       type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1NEX_9R-kZYlQT8FLks3_1XnDn9JDr8VCyrvNl7hyd44/edit?gid=59640710' },
-    { name: 'Labelerslist Attendance',            type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1J_BvZ6AHD4HcpTVf_iACyTJhcu0hx7ehczucAhN2QhM/edit?gid=1562394029' },
-    { name: 'Attendance delays OP',               type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1DUFehN3sGupWwkIyZO44IL1izYUSbXggtCUiUbxcxUs/edit?gid=0' },
+    { name: 'S.F Attendance',                      type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1PPASHHRwPtyaN7_hiDTjVNihqGv9ZxXmN0_LfaNh32Q/edit?gid=735554126' },
+    { name: 'AVP Morning Attendance',              type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1xydLswJHJPS6Vry7P7XcjUMdTRJK1vQ-VatN4B4chLI/edit' },
+    { name: 'AVP Night Attendance',                type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1u8wcQg38rRIoE_tnmRi0xD_OCq2XwVQWQj3Eg2mXh4g/edit?gid=15901893' },
+    { name: 'AVP Overnight Attendance',            type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1-SIZHQfvsBkEvs_5KRjztTMbOHGDCpN0L38Qp0lvXWI/edit' },
+    { name: 'UAE Attendance',                      type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1TEOmdfUsFy-p29WB9ttj79zMsbCV344r7uNSbouEWFs/edit?gid=507444073' },
+    { name: 'Mapping Overnight Attendance',        type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1NEX_9R-kZYlQT8FLks3_1XnDn9JDr8VCyrvNl7hyd44/edit?gid=59640710' },
+    { name: 'Labelerslist Attendance',             type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1J_BvZ6AHD4HcpTVf_iACyTJhcu0hx7ehczucAhN2QhM/edit?gid=1562394029' },
+    { name: 'Attendance delays OP',                type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1DUFehN3sGupWwkIyZO44IL1izYUSbXggtCUiUbxcxUs/edit?gid=0' },
   ]},
   { category: 'Forms', items: [
-    { name: 'Form.meti portal',                   type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSd2Krysi6kd_KWap5iXtNzCY4S_0Pg_HPVHRi4egEAfIoQ8nA/viewform?fbzx=1749840446210905879' },
-    { name: 'Ticket IT Form',                     type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqoBseVUc2XpLiUQiVakwohlUQzcyQjVEVFhIN0gxVzlFSzJaVzU1S0U3Ni4u&route=shorturl' },
-    { name: 'HR Coordination Form',               type: 'form', url: 'https://docs.google.com/forms/d/1usvBwXC1kRc2QIF5hgu1fBJVVErhRlPvvj0CwX7GC5o/edit' },
-    { name: 'Official Documents Request Form',    type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqleEX5dr1YZEmF92kQyPQQFUMU1MTU5TSjc0NEdETlhJSjNGWTlBS1JCUSQlQCN0PWcu&origin=QRCode&route=shorturl' },
-    { name: 'Job Application Form',               type: 'form', url: 'https://forms.office.com/r/r7c0wmSYxB' },
-    { name: 'Training Feedback Form',             type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSdtzKD3ZI3z6s32rPbayAZf4gKOaCCfWvM1k5BZAq1wkY14CQ/viewform?pli=1' },
-    { name: 'Metiportal_Admin',                   type: 'form', url: 'https://portal-meti.microengineering.ca/' },
+    { name: 'Form.meti portal',                    type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSd2Krysi6kd_KWap5iXtNzCY4S_0Pg_HPVHRi4egEAfIoQ8nA/viewform?fbzx=1749840446210905879' },
+    { name: 'Ticket IT Form',                      type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqoBseVUc2XpLiUQiVakwohlUQzcyQjVEVFhIN0gxVzlFSzJaVzU1S0U3Ni4u&route=shorturl' },
+    { name: 'HR Coordination Form',                type: 'form', url: 'https://docs.google.com/forms/d/1usvBwXC1kRc2QIF5hgu1fBJVVErhRlPvvj0CwX7GC5o/edit' },
+    { name: 'Official Documents Request Form',     type: 'form', url: 'https://forms.office.com/pages/responsepage.aspx?id=aYQGDwXYz0CRSZQnl3spqleEX5dr1YZEmF92kQyPQQFUMU1MTU5TSjc0NEdETlhJSjNGWTlBS1JCUSQlQCN0PWcu&origin=QRCode&route=shorturl' },
+    { name: 'Job Application Form',                type: 'form', url: 'https://forms.office.com/r/r7c0wmSYxB' },
+    { name: 'Training Feedback Form',              type: 'form', url: 'https://docs.google.com/forms/d/e/1FAIpQLSdtzKD3ZI3z6s32rPbayAZf4gKOaCCfWvM1k5BZAq1wkY14CQ/viewform?pli=1' },
+    { name: 'Metiportal_Admin',                    type: 'form', url: 'https://portal-meti.microengineering.ca/' },
   ]},
   { category: 'Operations & Reports', items: [
-    { name: 'Yupikey sheet',                      type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1RvdCM39Dz4-IT2k-w9sj0Ks7ExvdDACYGTceDDa41ks/edit?gid=282349957' },
-    { name: 'Onboarding',                         type: 'sheet', url: 'https://microengineeringgroup-my.sharepoint.com/:x:/r/personal/mohamed_ayman_microengineering_ca/_layouts/15/Doc.aspx?sourcedoc=%7BDF1DED35-1ED4-4803-A7DA-A14D4BE78AFA%7D&file=Labeling_Training_OnBoarding_Process.xlsx&action=default&mobileredirect=true' },
-    { name: 'Over Time Operation',                type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1R2045uoA6ICYqEuLB-wC2rsqbcM9lMbaFmM-nCw_Jko/edit?gid=682881054' },
-    { name: 'IT Issues Follow Up',                type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1YRA6octdldd3QTQtJiXX9bkueGPfR7-i9I4QHGQfUU0/edit?usp=drivesdk' },
-    { name: 'Labeler OverTime',                   type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1W2zitOpu5hamNuGQVVfZr0gCNqtsNEVntVes-80CoBc/edit?gid=383404338' },
-    { name: 'Violation Report',                   type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1pQ6hxfVJmkaS0VtxyWhAG40Dj2HOY053SMgYm3OTdUg/edit?gid=0' },
-    { name: 'الأوراق المسلمة',                    type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1V_FnuaBV4s9vLHYizGwPl-AFc5MMA1eviSw7iouxV6Q/edit?gid=0' },
-    { name: 'Master New Hire - Dataset',          type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1t3IATJAHtlrMur9QTuqcrbzEypi_oLOwnWA9c8WmrRw/edit?gid=0' },
+    { name: 'Yupikey sheet',                       type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1RvdCM39Dz4-IT2k-w9sj0Ks7ExvdDACYGTceDDa41ks/edit?gid=282349957' },
+    { name: 'Onboarding',                          type: 'sheet', url: 'https://microengineeringgroup-my.sharepoint.com/:x:/r/personal/mohamed_ayman_microengineering_ca/_layouts/15/Doc.aspx?sourcedoc=%7BDF1DED35-1ED4-4803-A7DA-A14D4BE78AFA%7D&file=Labeling_Training_OnBoarding_Process.xlsx&action=default&mobileredirect=true' },
+    { name: 'Over Time Operation',                 type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1R2045uoA6ICYqEuLB-wC2rsqbcM9lMbaFmM-nCw_Jko/edit?gid=682881054' },
+    { name: 'IT Issues Follow Up',                 type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1YRA6octdldd3QTQtJiXX9bkueGPfR7-i9I4QHGQfUU0/edit?usp=drivesdk' },
+    { name: 'Labeler OverTime',                    type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1W2zitOpu5hamNuGQVVfZr0gCNqtsNEVntVes-80CoBc/edit?gid=383404338' },
+    { name: 'Violation Report',                    type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1pQ6hxfVJmkaS0VtxyWhAG40Dj2HOY053SMgYm3OTdUg/edit?gid=0' },
+    { name: 'الأوراق المسلمة',                     type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1V_FnuaBV4s9vLHYizGwPl-AFc5MMA1eviSw7iouxV6Q/edit?gid=0' },
+    { name: 'Master New Hire - Dataset',           type: 'sheet', url: 'https://docs.google.com/spreadsheets/d/1t3IATJAHtlrMur9QTuqcrbzEypi_oLOwnWA9c8WmrRw/edit?gid=0' },
   ]},
 ];
 
 function showView(view) {
-  const isStaff = view === 'staff';
-  document.getElementById('staffView').style.display  = isStaff ? 'block' : 'none';
-  document.getElementById('sheetsView').style.display = isStaff ? 'none'  : 'block';
-  document.getElementById('tabStaffBtn').classList.toggle('active',  isStaff);
-  document.getElementById('tabSheetsBtn').classList.toggle('active', !isStaff);
-  if (!isStaff) renderSheets();
+  ['staff','training','sheets'].forEach(v => {
+    document.getElementById(v + 'View').style.display = v === view ? 'block' : 'none';
+    const btn = document.getElementById('tab' + v.charAt(0).toUpperCase() + v.slice(1) + 'Btn');
+    if (btn) btn.classList.toggle('active', v === view);
+  });
+  if (view === 'sheets') renderSheets();
 }
 
 function sheetIconSvg(type) {
