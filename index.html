@@ -128,6 +128,7 @@
   .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
   .badge-active { background: var(--ok-dim); color: var(--ok); }
   .badge-inactive { background: var(--bad-dim); color: var(--bad); }
+  .badge-resigned { background: rgba(250,176,5,0.12); color: #fab005; }
   .badge-shift { background: var(--bg-2); color: var(--text-1); border: 1px solid var(--line); font-family: 'JetBrains Mono', monospace; font-weight: 500; border-radius: 5px; }
 
   .avatar { width: 28px; height: 28px; border-radius: 7px; background: var(--bg-2); border: 1px solid var(--line); color: var(--signal); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 700; margin-right: 11px; vertical-align: middle; flex-shrink: 0; font-family: 'JetBrains Mono', monospace; }
@@ -295,7 +296,7 @@
         </div>
         <div class="stat" data-tone="bad">
           <div class="stat-top"><div class="stat-icon"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></div></div>
-          <div class="stat-label">Inactive</div>
+          <div class="stat-label">Resigned</div>
           <div class="stat-value accent-bad" id="statInactive">—</div>
         </div>
         <div class="stat" data-tone="signal">
@@ -320,6 +321,7 @@
         <select id="statusFilter" onchange="applyFilters()">
           <option value="">All statuses</option>
           <option value="working">Working</option>
+          <option value="resigned">Resigned</option>
           <option value="inactive">Inactive</option>
         </select>
         <button class="btn-ghost" onclick="loadData(true)">
@@ -528,7 +530,8 @@ function escapeHTML(v) {
 }
 function normalizeShift(v)   { if (!v) return ''; const t = String(v).trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase() : ''; }
 function normalizeProject(v) { if (!v) return ''; const t = String(v).trim(); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ''; }
-function isActive(s)         { if (!s) return false; const v = s.toLowerCase(); return v.includes('working') || v.includes('active'); }
+function isActive(s)   { if (!s) return false; const v = s.toLowerCase(); return v.includes('working') || v === 'active'; }
+function isResigned(s) { if (!s) return false; return s.toLowerCase().includes('resign'); }
 
 // ════════════════════════════════════════════════════════════════
 // SYNC INDICATOR
@@ -729,7 +732,7 @@ function applyFilters() {
     const ms  = !search  || (r['Name']||'').toLowerCase().includes(search) || String(r['National ID']||'').includes(search);
     const msh = !shift   || normalizeShift(r['Shift']) === shift;
     const mp  = !project || (r['Project']||'').trim().toLowerCase() === project.toLowerCase();
-    const mst = !status  || (status==='working' && isActive(r['Status'])) || (status==='inactive' && !isActive(r['Status']));
+    const mst = !status  || (status==='working' && isActive(r['Status'])) || (status==='resigned' && isResigned(r['Status'])) || (status==='inactive' && !isActive(r['Status']) && !isResigned(r['Status']));
     return ms && msh && mp && mst;
   });
 
@@ -752,7 +755,7 @@ function sortBy(col) { if (sortCol===col) sortAsc=!sortAsc; else { sortCol=col; 
 function updateStats(filtered) {
   document.getElementById('statTotal').textContent     = allData.length;
   document.getElementById('statActive').textContent    = allData.filter(r=>isActive(r['Status'])).length;
-  document.getElementById('statInactive').textContent  = allData.filter(r=>!isActive(r['Status'])).length;
+  document.getElementById('statInactive').textContent  = allData.filter(r=>isResigned(r['Status'])).length;
   document.getElementById('statProjects').textContent  = new Set(allData.map(r=>(r['Project']||'').trim().toLowerCase()).filter(Boolean)).size;
   document.getElementById('statLocations').textContent = new Set(allData.map(r=>r['Location']).filter(Boolean)).size;
   document.getElementById('rowCount').textContent      = filtered.length + ' staff';
@@ -780,7 +783,7 @@ function renderTable(data) {
       <td><span class="badge badge-shift">${escapeHTML(normalizeShift(r['Shift'])||'—')}</span></td>
       <td>${escapeHTML(normalizeProject(r['Project'])||'—')}</td>
       <td style="color:var(--text-1)">${escapeHTML(r['Role']||'—')}</td>
-      <td><span class="badge ${active?'badge-active':'badge-inactive'}">${escapeHTML(r['Status']||'—')}</span></td>
+      <td><span class="badge ${active ? 'badge-active' : isResigned(r['Status']) ? 'badge-resigned' : 'badge-inactive'}">${escapeHTML(r['Status']||'—')}</span></td>
       <td style="color:var(--text-1)">${escapeHTML(r['Location']||'—')}</td>
       <td>
         <div class="action-cell">
