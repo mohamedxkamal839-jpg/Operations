@@ -752,7 +752,50 @@
 const SUPABASE_URL      = 'https://dibhtnnkhakcygzpenwg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
 const SESSION_KEY       = 'supabaseSession';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxFvyqM6DGE5RyeDrbzGHMpgaeqNJA6QUFRGxpGHe40KtMndvrdUIsY7dEvvb3rM3Pmyw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMCdP7ZQ8OatvB_QF661tlB0BwE3kd86IZKSRx0_PJ2mNykhXTa8WEcNxOBOCHE_RgzA/exec';
+
+const CACHE_KEY      = 'dashboard_cache_v1';
+const CACHE_MAX_AGE  = 5 * 60 * 1000; // اعتبر الكاش "قديم جدًا" بعد 5 دقايق
+const YBK_CACHE_KEY  = 'dashboard_ybk_cache_v1';
+
+function saveCacheToStorage() {
+  try {
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+      employees: allData,
+      training: trainingData,
+      timestamp: Date.now()
+    }));
+  } catch (e) { /* sessionStorage ممكن يفضل full في حالات نادرة - تجاهل */ }
+}
+
+function loadCacheFromStorage() {
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.timestamp > CACHE_MAX_AGE) return null; // كاش قديم، تجاهله
+    return parsed;
+  } catch (e) { return null; }
+}
+
+function saveYbkCacheToStorage() {
+  try {
+    sessionStorage.setItem(YBK_CACHE_KEY, JSON.stringify({
+      data: yubikeyData,
+      timestamp: Date.now()
+    }));
+  } catch (e) { /* تجاهل */ }
+}
+
+function loadYbkCacheFromStorage() {
+  try {
+    const raw = sessionStorage.getItem(YBK_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.timestamp > CACHE_MAX_AGE) return null;
+    return parsed;
+  } catch (e) { return null; }
+}
 
 const METI_EMAILS = new Set([
   'me490776@meti.ai','me708281@meti.ai','me685792@meti.ai','me234966@meti.ai',
@@ -828,6 +871,7 @@ async function handleLogout() {
   stopPolling();
   try { if (getSession()) await fetch(`${SUPABASE_URL}/auth/v1/logout`,{method:'POST',headers:authHeaders()}); } catch {}
   clearSession(); allData=[]; trainingData=[]; yubikeyData={dateColumns:[],rows:[]}; sortCol=''; sortAsc=true; selectedYbkDate=null;
+  sessionStorage.removeItem(CACHE_KEY); sessionStorage.removeItem(YBK_CACHE_KEY);
   document.getElementById('dashboardSection').style.display='none';
   document.getElementById('loginSection').style.display='flex';
   document.getElementById('loginEmail').value=''; document.getElementById('loginPassword').value='';
@@ -838,7 +882,18 @@ function showDashboard() {
   document.getElementById('loginSection').style.display='none';
   document.getElementById('dashboardSection').style.display='block';
   document.getElementById('navUserEmail').textContent=getSession()?.user?.email||'';
-  loadData(); startPolling();
+
+  // اعرض الكاش المحفوظ فورًا قبل أي fetch - الداشبورد يبان فورًا
+  const cached = loadCacheFromStorage();
+  if (cached) {
+    allData=cached.employees||[]; trainingData=cached.training||[];
+    populateFilters(); applyFilters();
+    populateTrainingFilters(); renderTrainingStats(); renderTrainingTable();
+    setSyncState('ok',`Cached ${new Date(cached.timestamp).toLocaleTimeString('en-US')}`);
+  }
+
+  loadData(!cached); // لو مفيش كاش، اظهر اللودينج العادي. لو فيه، حدّث في الخلفية بهدوء
+  startPolling();
 }
 
 function startPolling() { stopPolling(); pollTimer=setInterval(()=>{ getSession()?loadData():stopPolling(); },120000); }
@@ -858,6 +913,7 @@ async function loadData(forceVisible=false) {
     allData=json.employees||[]; trainingData=json.training||[];
     populateFilters(); applyFilters();
     populateTrainingFilters(); renderTrainingStats(); renderTrainingTable();
+    saveCacheToStorage();
     setSyncState('ok',`Updated ${new Date().toLocaleTimeString('en-US')}`);
   } catch(ex) {
     if (isFirst) { ['loadingState','trnLoadingState'].forEach(id=>document.getElementById(id).style.display='none'); showError('Failed to load: '+escapeHTML(ex.message)); }
@@ -890,9 +946,17 @@ async function callScript(action, payload) {
 // ── Yubikey ──
 async function loadYubikeyData(forceRefresh=false) {
   if (!getSession()) return;
-  document.getElementById('ybkLoadingState').style.display='block';
-  document.getElementById('ybkTable').style.display='none';
-  document.getElementById('ybkEmptyState').style.display='none';
+
+  if (!forceRefresh) {
+    const cached = loadYbkCacheFromStorage();
+    if (cached) {
+      yubikeyData = cached.data || { dateColumns: [], rows: [] };
+      buildDateSelector();
+      renderYubikeyTable();
+    }
+  }
+
+  document.getElementById('ybkLoadingState').style.display = (yubikeyData.rows&&yubikeyData.rows.length>0) ? 'none' : 'block';
   document.getElementById('ybkErrorBanner').style.display='none';
   try {
     const res = await fetch(APPS_SCRIPT_URL + '?sheet=yubikey');
@@ -903,6 +967,7 @@ async function loadYubikeyData(forceRefresh=false) {
     yubikeyData.rows = yubikeyData.rows.filter(r => ybkIsMeti(r));
     buildDateSelector();
     renderYubikeyTable();
+    saveYbkCacheToStorage();
   } catch(ex) {
     document.getElementById('ybkLoadingState').style.display='none';
     const b=document.getElementById('ybkErrorBanner');
@@ -967,16 +1032,17 @@ function renderYubikeyTable() {
 }
 
 // ── Optimistic ──
-function optimisticAdd(p)       { allData.push(p); populateFilters(); applyFilters(); }
-function optimisticEdit(id,p)   { const i=allData.findIndex(r=>String(r['National ID'])===String(id)); if(i!==-1){allData[i]={...allData[i],...p}; populateFilters(); applyFilters();} }
-function optimisticDelete(id)   { allData=allData.filter(r=>String(r['National ID'])!==String(id)); populateFilters(); applyFilters(); }
-function optimisticAddTrn(p)    { trainingData.push(p); populateTrainingFilters(); renderTrainingStats(); renderTrainingTable(); }
-function optimisticEditTrn(id,p){ const i=trainingData.findIndex(r=>String(r['National ID'])===String(id)); if(i!==-1){trainingData[i]={...trainingData[i],...p}; renderTrainingStats(); renderTrainingTable();} }
-function optimisticDeleteTrn(id){ trainingData=trainingData.filter(r=>String(r['National ID'])!==String(id)); populateTrainingFilters(); renderTrainingStats(); renderTrainingTable(); }
+function optimisticAdd(p)       { allData.push(p); populateFilters(); applyFilters(); saveCacheToStorage(); }
+function optimisticEdit(id,p)   { const i=allData.findIndex(r=>String(r['National ID'])===String(id)); if(i!==-1){allData[i]={...allData[i],...p}; populateFilters(); applyFilters(); saveCacheToStorage();} }
+function optimisticDelete(id)   { allData=allData.filter(r=>String(r['National ID'])!==String(id)); populateFilters(); applyFilters(); saveCacheToStorage(); }
+function optimisticAddTrn(p)    { trainingData.push(p); populateTrainingFilters(); renderTrainingStats(); renderTrainingTable(); saveCacheToStorage(); }
+function optimisticEditTrn(id,p){ const i=trainingData.findIndex(r=>String(r['National ID'])===String(id)); if(i!==-1){trainingData[i]={...trainingData[i],...p}; renderTrainingStats(); renderTrainingTable(); saveCacheToStorage();} }
+function optimisticDeleteTrn(id){ trainingData=trainingData.filter(r=>String(r['National ID'])!==String(id)); populateTrainingFilters(); renderTrainingStats(); renderTrainingTable(); saveCacheToStorage(); }
 function optimisticMoveTrn(id)  { optimisticDeleteTrn(id); }
 function rollback(prevEmp,prevTrn) {
   if(prevEmp!==undefined){allData=prevEmp; populateFilters(); applyFilters();}
   if(prevTrn!==undefined){trainingData=prevTrn; populateTrainingFilters(); renderTrainingStats(); renderTrainingTable();}
+  saveCacheToStorage();
 }
 
 // ── Views ──
@@ -1304,6 +1370,7 @@ async function confirmMove() {
   const trainee=trainingData.find(r=>String(r['National ID'])===String(id));
   if(trainee){allData.push({...trainee,'Status':status}); populateFilters(); applyFilters();}
   optimisticMoveTrn(id);
+  saveCacheToStorage();
   callScript('moveToEmployees', {'National ID':id,'Status':status}).catch(ex=>{rollback(prevEmp,prevTrn);showError('Move failed: '+ex.message,'training');});
 }
 
