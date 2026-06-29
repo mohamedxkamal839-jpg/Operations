@@ -878,15 +878,13 @@ async function fetchFromSheet() {
 //       في الشيت كـ column زيادة
 // ══════════════════════════════════════════════════════
 async function callScript(action, payload) {
-  const res = await fetch(APPS_SCRIPT_URL, {
+  await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ action: action, data: payload })
   });
-  let json;
-  try { json = await res.json(); } catch { return { success: true }; }
-  if (json && json.error) throw new Error(json.error);
-  return json;
+  return { success: true };
 }
 
 // ── Yubikey ──
