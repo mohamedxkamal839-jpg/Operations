@@ -887,7 +887,7 @@ async function callScript(action, payload) {
   return { success: true };
 }
 
-// ── Yubikey ──
+// ── Yubikey (النسخة المتوافقة والمعدلة بالكامل مع السكريبت الجديد) ──
 async function loadYubikeyData(forceRefresh=false) {
   if (!getSession()) return;
   document.getElementById('ybkLoadingState').style.display='block';
@@ -895,75 +895,80 @@ async function loadYubikeyData(forceRefresh=false) {
   document.getElementById('ybkEmptyState').style.display='none';
   document.getElementById('ybkErrorBanner').style.display='none';
   try {
-    const res = await fetch(APPS_SCRIPT_URL + '?sheet=yubikey');
+    const res = await fetch(APPS_SCRIPT_URL); // جلب كل البيانات بسرعة
     if (!res.ok) throw new Error('Failed to fetch Yubikey data');
     const json = await res.json();
     if (json.error) throw new Error(json.error);
-    yubikeyData = json.yubikey || { dateColumns: [], rows: [] };
-    yubikeyData.rows = yubikeyData.rows.filter(r => ybkIsMeti(r));
-    buildDateSelector();
+    
+    // قراءة المصفوفة المباشرة والسريعة
+    const rawYubikey = json.yubikey || [];
+    
+    // الفلترة الخاصة بك بناءً على دالة ybkIsMeti
+    yubikeyData = rawYubikey.filter(r => ybkIsMeti(r));
+    
     renderYubikeyTable();
   } catch(ex) {
     document.getElementById('ybkLoadingState').style.display='none';
-    const b=document.getElementById('ybkErrorBanner');
+    const b = document.getElementById('ybkErrorBanner');
     b.style.display='block'; b.textContent='Failed to load Yubikey data: '+ex.message;
   }
 }
 
-function buildDateSelector() {
-  const dates = yubikeyData.dateColumns || [];
-  const container = document.getElementById('ybkDateSelector');
-  if (dates.length === 0) { container.innerHTML='<span style="font-size:13px;color:var(--text-2)">No dates available</span>'; return; }
-  if (!selectedYbkDate || !dates.includes(selectedYbkDate)) selectedYbkDate = dates[dates.length - 1];
-  container.innerHTML = dates.map(d => `<button class="ybk-date-btn${d===selectedYbkDate?' active':''}" onclick="selectYbkDate('${escapeHTML(d)}')">${escapeHTML(d)}</button>`).join('');
-}
-
-function selectYbkDate(date) { selectedYbkDate = date; buildDateSelector(); renderYubikeyTable(); }
-
+// لغينا تعقيد التواريخ الديناميكية القديمة وخلينا الجدول يقرأ الأعمدة الثابتة فوراً
 function renderYubikeyTable() {
   const search = (document.getElementById('ybkSearch').value||'').toLowerCase();
-  const statusFilter = document.getElementById('ybkStatusFilter').value;
-  const date = selectedYbkDate;
-  if (!date) { document.getElementById('ybkLoadingState').style.display='none'; document.getElementById('ybkEmptyState').style.display='block'; return; }
-  document.getElementById('ybkDateColHeader').textContent = date;
-  let rows = yubikeyData.rows || [];
-  let total=0, present=0, absent=0, training=0;
-  rows.forEach(r => {
-    const v = r.attendance[date] || '';
-    if (ybkIsPresent(v))  present++;
-    if (ybkIsAbsent(v))   absent++;
-    if (ybkIsTraining(v)) training++;
-  });
-  total = present + training;
-  document.getElementById('ybkTotal').textContent    = total;
-  document.getElementById('ybkPresent').textContent  = present;
-  document.getElementById('ybkAbsent').textContent   = absent;
-  document.getElementById('ybkTraining').textContent = training;
+  
+  // إخفاء الـ Date Selector لأنه لم يعد مستخدماً بنظام الحضور القديم
+  const dateContainer = document.getElementById('ybkDateSelector');
+  if (dateContainer) dateContainer.innerHTML = '';
+
+  let rows = yubikeyData || [];
+  
+  // فلترة بالاسم والبحث
   let filtered = rows.filter(r => {
-    const v = r.attendance[date] || '';
-    const ms = !search || r.name.toLowerCase().includes(search);
-    const ss = !statusFilter || (statusFilter==='present' && ybkIsPresent(v)) || (statusFilter==='absent' && ybkIsAbsent(v)) || (statusFilter==='training' && ybkIsTraining(v));
-    return ms && ss;
+    return !search || (r['Name'] || r.name || '').toLowerCase().includes(search);
   });
+  
+  // تحديث الإحصائيات البسيطة بناءً على العدد
+  document.getElementById('ybkTotal').textContent    = filtered.length;
+  document.getElementById('ybkPresent').textContent  = filtered.length; // افتراضي أو حسب الحاجة
+  document.getElementById('ybkAbsent').textContent   = 0;
+  document.getElementById('ybkTraining').textContent = 0;
+  
   document.getElementById('ybkLoadingState').style.display='none';
   document.getElementById('ybkRowCount').textContent = filtered.length + ' records';
-  document.getElementById('ybkFooterInfo').textContent = `Showing ${filtered.length} of ${rows.length} employees`;
+  document.getElementById('ybkFooterInfo').textContent = `Showing ${filtered.length} of ${rows.length} records`;
   document.getElementById('ybkFooterTime').textContent = new Date().toLocaleDateString('en-US');
-  if (filtered.length === 0) { document.getElementById('ybkTable').style.display='none'; document.getElementById('ybkEmptyState').style.display='block'; return; }
+  
+  if (filtered.length === 0) { 
+    document.getElementById('ybkTable').style.display='none'; 
+    document.getElementById('ybkEmptyState').style.display='block'; 
+    return; 
+  }
+  
   document.getElementById('ybkEmptyState').style.display='none';
   document.getElementById('ybkTable').style.display='table';
+  
+  // بناء الجدول بناءً على الأعمدة الجديدة المباشرة القادمة من الجوجل شيت
   document.getElementById('ybkTableBody').innerHTML = filtered.map(r => {
-    const v = r.attendance[date] || '';
-    const initials = escapeHTML(r.name.split(' ').map(w=>w[0]).slice(0,2).join(''));
+    const name = r['Name'] || r.name || '—';
+    const deviceNo = r['Device No.'] || r['Device No'] || r.deviceNo || '—';
+    const location = r['Location'] || r.location || '—';
+    const ybkSerial = r['Yubikeys'] || r['Yubikey'] || r.yubikey || '—';
+    const status = r['Status'] || 'Active'; // أو أي عمود حالة عندك
+    
+    const initials = escapeHTML(name.split(' ').map(w=>w[0]).slice(0,2).join(''));
+    
     return `<tr>
-      <td><div class="name-cell"><div class="avatar" style="color:var(--purple)">${initials}</div><span style="font-weight:600">${escapeHTML(r.name)}</span></div></td>
-      <td class="mono" style="color:var(--text-1);font-size:12px">${escapeHTML(r.deviceNo||'—')}</td>
-      <td style="color:var(--text-1)">${escapeHTML(r.location||'—')}</td>
-      <td class="mono" style="color:var(--signal);font-size:12px">${escapeHTML(r.yubikey||'—')}</td>
-      <td class="ybk-date-col">${v ? `<span class="ybk-att-cell ${ybkAttClass(v)}">${escapeHTML(ybkAttLabel(v))}</span>` : '—'}</td>
-      <td>${ybkIsPresent(v)?'<span class="badge badge-active">Present</span>':ybkIsTraining(v)?'<span class="badge badge-training">Training</span>':ybkIsAbsent(v)?'<span class="badge badge-resigned">Absent</span>':'<span style="color:var(--text-2);font-size:12px">—</span>'}</td>
+      <td><div class="name-cell"><div class="avatar" style="color:var(--purple)">${initials}</div><span style="font-weight:600">${escapeHTML(name)}</span></div></td>
+      <td class="mono" style="color:var(--text-1);font-size:12px">${escapeHTML(deviceNo)}</td>
+      <td style="color:var(--text-1)">${escapeHTML(location)}</td>
+      <td class="mono" style="color:var(--signal);font-size:12px">${escapeHTML(ybkSerial)}</td>
+      <td class="ybk-date-col">—</td>
+      <td><span class="badge badge-active">${escapeHTML(status)}</span></td>
     </tr>`;
-  }).join('');
+  }).join(''); 
+}
 }
 
 // ── Optimistic ──
