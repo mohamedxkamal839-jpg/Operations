@@ -805,18 +805,8 @@ function saveSession(s) { session=s; sessionStorage.setItem(SESSION_KEY, JSON.st
 function clearSession() { session=null; sessionStorage.removeItem(SESSION_KEY); }
 function authHeaders(extra) { const s=getSession(); return {'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${s?s.access_token:SUPABASE_ANON_KEY}`,...extra}; }
 
-window.onload = function showDashboard() {
-  document.getElementById('loginSection').style.display='none';
-  document.getElementById('dashboardSection').style.display='block';
-  
-  document.getElementById('navUserEmail').textContent = getSession()?.user?.email || '';
-
-  // 🔔 تنبيه بكلمة Welcome فقط أول ما تفتح
-  alert('Welcome');
-
-  loadData(); 
-  startPolling();
-}
+window.onload = function() { if (getSession()) showDashboard(); };
+window.addEventListener('beforeunload', stopPolling);
 
 async function handleLogin(e) {
   e.preventDefault();
