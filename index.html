@@ -662,6 +662,20 @@ function renderSiteCards(rows, date) {
     else if (ybkIsTraining(v)) s.training++;
   });
 
+  // ✅ Nasr City flash drive (Yubikey) total — counts everyone located in Nasr City who
+  // has an actual Yubikey assigned (non-buffer), INCLUDING WLA team members based there.
+  // QTC/Training/Quality team members are still excluded since they don't hold a flash drive here.
+  let nasrCityFlashTotal = 0;
+  rows.forEach(r => {
+    if (ybkIsQTC(r.deviceNo)) return;
+    const loc = (r.location || '').trim().toLowerCase();
+    if (getSiteForLocation(loc) !== 'nasr_city') return;
+    const v = r.attendance[date] || '';
+    if (ybkIsBuffer(v)) return; // no flash drive assigned
+    if (!String(r.yubikey || '').trim()) return; // no flash drive value recorded
+    nasrCityFlashTotal++;
+  });
+
   let html = '';
   for (const group of SITE_GROUPS) {
     const foundLocs = [];
@@ -709,6 +723,29 @@ function renderSiteCards(rows, date) {
           <div class="site-locations-grid">${locCardsHtml}</div>
         </div>
       </div>`;
+
+    // ✅ Insert the Nasr City flash drive count card right after the Nasr City site card
+    if (group.key === 'nasr_city') {
+      html += `
+      <div class="site-card">
+        <div class="site-card-header" style="cursor:default">
+          <div class="site-card-left">
+            <div class="site-icon" style="background:var(--purple-dim);border-color:var(--purple-line);color:var(--purple)">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M12 12h.01"/><path d="M7 12h.01"/><path d="M17 12h.01"/></svg>
+            </div>
+            <div>
+              <div class="site-name">Nasr City Flash Drives</div>
+              <div class="site-sub">Yubikeys assigned (incl. WLA)</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="site-totals">
+              <div class="site-total-item"><div class="site-total-val" style="color:var(--purple)">${nasrCityFlashTotal}</div><div class="site-total-lbl">Total</div></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
   }
 
   grid.innerHTML = html;
