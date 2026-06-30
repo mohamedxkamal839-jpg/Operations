@@ -1000,8 +1000,7 @@ function renderNasrCityReport(rows, date) {
   const hiringTeamRows = nasrRows.filter(r => ybkIsTraining(r.attendance[date] || ''));
   const hiringTeamCount = hiringTeamRows.length;
 
-  const stlCount = 1; // fixed, per request
-  const stlTrainingQuality = stlCount + hiringTeamCount;
+  const stlTrainingQuality = 1; // fixed value, per request
 
   // ✅ Labelers = everyone left after removing the Training/Hiring group above (WLA already excluded from nasrRows)
   const labelerPool = nasrRows.filter(r => !hiringTeamRows.includes(r));
