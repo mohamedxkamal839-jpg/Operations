@@ -412,6 +412,20 @@
         </div>
       </div>
 
+      <!-- ✅ St. Fatima Daily Report (copyable message) -->
+      <div class="ybk-history-card" style="margin-bottom:1.5rem">
+        <div class="ybk-history-header">
+          <span class="ybk-history-title">St. Fatima Daily Report</span>
+          <button class="btn-ghost" onclick="copyStFatimaReport()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <div style="padding:1.2rem 1.5rem">
+          <pre id="stFatimaReportText" class="mono" style="white-space:pre-wrap; font-size:13px; line-height:1.7; color:var(--text-0); background:var(--bg-0); border:1px solid var(--line); border-radius:8px; padding:1rem 1.2rem;">—</pre>
+        </div>
+      </div>
+
       <!-- Records table -->
       <div class="ybk-history-card">
         <div class="ybk-history-header"><span class="ybk-history-title">Yubikey records</span><span class="table-count" id="ybkRowCount" style="color:var(--purple);background:var(--purple-dim);border-color:var(--purple-line)">—</span></div>
@@ -1061,6 +1075,72 @@ function copyNasrCityReport() {
   });
 }
 
+// ✅ ST. FATIMA DAILY REPORT
+// Format:
+//   Total       = everyone in St. Fatima with an actual yubikey value (excludes Buffer/Empty)
+//   With Labelers = Present count in St. Fatima (matches the Present number on the St. Fatima site card)
+//   Absent Labelers = Absent count in St. Fatima
+//   Empty       = Buffer count in St. Fatima (devices marked Empty/no yubikey assigned)
+//   Training    = Training count in St. Fatima
+function renderStFatimaReport(rows, date) {
+  const el = document.getElementById('stFatimaReportText');
+  if (!el) return;
+  if (!date) { el.textContent = '—'; return; }
+
+  const inStFatima = r => getSiteForLocation((r.location||'').toLowerCase()) === 'st_fatima';
+  const sfRowsAll = rows.filter(inStFatima).filter(r => !ybkIsWLA(r.deviceNo) && !ybkIsQTC(r.deviceNo));
+
+  const hasYubikey = r => {
+    const v = r.attendance[date] || '';
+    if (ybkIsBuffer(v)) return false;
+    return !!String(r.yubikey || '').trim();
+  };
+  const noYubikeyValue = r => !String(r.yubikey || '').trim();
+
+  const withYubikey = sfRowsAll.filter(hasYubikey);
+
+  const withLabelersCount = withYubikey.filter(r => ybkIsPresent(r.attendance[date] || '')).length;
+  const absentLabelersCount = withYubikey.filter(r => ybkIsAbsent(r.attendance[date] || '')).length;
+  const trainingCount = withYubikey.filter(r => ybkIsTraining(r.attendance[date] || '')).length;
+
+  // Empty = Buffer (no yubikey assigned), regardless of attendance status
+  const emptyCount = sfRowsAll.filter(r => {
+    const v = r.attendance[date] || '';
+    return ybkIsBuffer(v) || noYubikeyValue(r);
+  }).length;
+
+  const total = withYubikey.length;
+
+  const report =
+`GT YubiKeys (St. Fatima)
+All GT YubiKeys are in place at the end of the overnight shift.
+Total: ${total} YubiKeys
+Status:
+• With Labelers: ${withLabelersCount}
+• Absent Labelers: ${absentLabelersCount}
+• Empty: ${emptyCount}
+• Training : ${trainingCount}`;
+
+  el.textContent = report;
+}
+
+function copyStFatimaReport() {
+  const el = document.getElementById('stFatimaReportText');
+  if (!el) return;
+  const text = el.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    showSuccess('Report copied to clipboard.');
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+    showSuccess('Report copied to clipboard.');
+  });
+}
+
 function renderYubikeyTable(){
   const search=(document.getElementById('ybkSearch').value||'').toLowerCase();
   const statusFilter=document.getElementById('ybkStatusFilter').value;
@@ -1095,6 +1175,8 @@ function renderYubikeyTable(){
   renderSpecialCards(rows, date);
   // ✅ رسم تقرير Nasr City اليومي
   renderNasrCityReport(rows, date);
+  // ✅ رسم تقرير St. Fatima اليومي
+  renderStFatimaReport(rows, date);
 
   document.getElementById('ybkTotal').textContent=present+training;
   document.getElementById('ybkPresent').textContent=present;
