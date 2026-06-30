@@ -669,6 +669,7 @@ function renderSiteCards(rows, date) {
     if (ybkIsQTC(r.deviceNo)) return; // QTC team has its own card
     const v = r.attendance[date] || '';
     if (ybkIsBuffer(v)) return; // Buffer has its own card
+    if (!String(r.yubikey || '').trim()) return; // ✅ no yubikey value recorded → belongs in Buffer, not in Present/Absent/Training
 
     if (!locStats.has(loc)) locStats.set(loc, {present:0, absent:0, training:0});
     const s = locStats.get(loc);
@@ -1064,6 +1065,7 @@ function renderYubikeyTable(){
     if(ybkIsQTC(r.deviceNo))return; // QTC excluded from top stats — own card
     const v=r.attendance[date]||'';
     if(ybkIsBuffer(v))return; // excluded from all top counts — they're in the Buffer card instead
+    if(!String(r.yubikey||'').trim())return; // ✅ no yubikey value recorded → Buffer, not Present/Absent/Training
     if(ybkIsPresent(v))present++;
     else if(ybkIsAbsent(v))absent++;
     else if(ybkIsTraining(v))training++;
