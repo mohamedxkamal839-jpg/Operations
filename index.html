@@ -520,7 +520,8 @@ function ybkIsBuffer(v){const t=String(v||'').trim();return t==='-'||t==='–'||
 // ✅ WLA = Device No. column equals "WLA" (case-insensitive)
 function ybkIsWLA(deviceNo){return String(deviceNo||'').trim().toUpperCase()==='WLA';}
 // ✅ QTC = Device No. column equals "QTC" (case-insensitive) — Training/Quality Team
-function ybkIsQTC(deviceNo){return String(deviceNo||'').trim().toUpperCase()==='QTC';}
+// ✅ QTC group = Device No. is QTC, "Training Team", or "Quality Team" (case-insensitive) — all Training/Quality Team
+function ybkIsQTC(deviceNo){const v=String(deviceNo||'').trim().toUpperCase();return v==='QTC'||v==='TRAINING TEAM'||v==='QUALITY TEAM';}
 function ybkAttClass(v){if(ybkIsPresent(v))return'ybk-att-p';if(ybkIsAbsent(v))return'ybk-att-0';if(ybkIsTraining(v))return'ybk-att-t';if(ybkIsBuffer(v))return'ybk-att-buf';return'';}
 function ybkAttLabel(v){if(ybkIsPresent(v))return v.toUpperCase()==='TP'?'TP':'P';if(ybkIsAbsent(v))return'0';if(ybkIsTraining(v))return v.toUpperCase();if(ybkIsBuffer(v))return'—';return v||'—';}
 
@@ -748,20 +749,30 @@ function renderSpecialCards(rows, date) {
   });
   const wlaTotal = wlaRows.length;
 
-  // ── QTC (Device No. === "QTC"), split by NC vs SF location bucket ──
+  // ── QTC group (Device No. = QTC / Training Team / Quality Team), split by sub-team then NC vs SF ──
   const qtcRows = rows.filter(r => ybkIsQTC(r.deviceNo));
-  const qtcBuckets = new Map(); // bucket -> {present, absent, training}
+  const qtcSubKey = r => {
+    const v = String(r.deviceNo||'').trim().toUpperCase();
+    if (v === 'TRAINING TEAM') return 'Training Team';
+    if (v === 'QUALITY TEAM') return 'Quality Team';
+    return 'QTC';
+  };
+  const qtcGroups = new Map(); // subTeam -> Map(bucket -> {present, absent, training})
   qtcRows.forEach(r => {
+    const sub = qtcSubKey(r);
     const bucket = getQtcBucket(r.location);
-    if (!qtcBuckets.has(bucket)) qtcBuckets.set(bucket, {present:0, absent:0, training:0});
+    if (!qtcGroups.has(sub)) qtcGroups.set(sub, new Map());
+    const buckets = qtcGroups.get(sub);
+    if (!buckets.has(bucket)) buckets.set(bucket, {present:0, absent:0, training:0});
     const v = r.attendance[date] || '';
-    const s = qtcBuckets.get(bucket);
+    const s = buckets.get(bucket);
     if (ybkIsPresent(v)) s.present++;
     else if (ybkIsAbsent(v)) s.absent++;
     else if (ybkIsTraining(v)) s.training++;
   });
   const qtcTotal = qtcRows.length;
   const qtcOrder = ['NC', 'SF', 'Other'];
+  const qtcSubOrder = ['QTC', 'Training Team', 'Quality Team'];
 
   const bufferRowsHtml = bufferByLocation.size
     ? [...bufferByLocation.entries()].sort((a,b)=>b[1]-a[1]).map(([loc,count]) => `
@@ -791,18 +802,22 @@ function renderSpecialCards(rows, date) {
     ${wlaOther ? `<div class="special-card-row"><span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--text-2)"></span>Other</span><span class="special-card-row-val" style="color:var(--text-0)">${wlaOther}</span></div>` : ''}
   `;
 
-  const qtcBlocksHtml = qtcBuckets.size
-    ? qtcOrder.filter(b => qtcBuckets.has(b)).map(bucket => {
-        const s = qtcBuckets.get(bucket);
-        return `
-        <div class="qtc-loc-block">
-          <div class="qtc-loc-title">${esc(bucket)}</div>
-          <div class="qtc-loc-stats">
-            <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--ok)">${s.present}</div><div class="qtc-loc-stat-lbl">Present</div></div>
-            <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--bad)">${s.absent}</div><div class="qtc-loc-stat-lbl">Absent</div></div>
-            <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--warn)">${s.training}</div><div class="qtc-loc-stat-lbl">Training</div></div>
-          </div>
-        </div>`;
+  const qtcBlocksHtml = qtcGroups.size
+    ? qtcSubOrder.filter(sub => qtcGroups.has(sub)).map(sub => {
+        const buckets = qtcGroups.get(sub);
+        const bucketBlocks = qtcOrder.filter(b => buckets.has(b)).map(bucket => {
+          const s = buckets.get(bucket);
+          return `
+          <div class="qtc-loc-block">
+            <div class="qtc-loc-title">${esc(bucket)}</div>
+            <div class="qtc-loc-stats">
+              <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--ok)">${s.present}</div><div class="qtc-loc-stat-lbl">Present</div></div>
+              <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--bad)">${s.absent}</div><div class="qtc-loc-stat-lbl">Absent</div></div>
+              <div class="qtc-loc-stat"><div class="qtc-loc-stat-val" style="color:var(--warn)">${s.training}</div><div class="qtc-loc-stat-lbl">Training</div></div>
+            </div>
+          </div>`;
+        }).join('');
+        return `<div style="margin-bottom:10px"><div style="font-size:11.5px;font-weight:700;color:var(--text-1);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">${esc(sub)}</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px">${bucketBlocks}</div></div>`;
       }).join('')
     : '';
 
@@ -854,8 +869,8 @@ function renderSpecialCards(rows, date) {
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
           <div>
-            <div class="special-card-name">QTC Team</div>
-            <div class="special-card-sub">DEVICE NO. = QTC · TRAINING / QUALITY</div>
+            <div class="special-card-name">Training / Quality</div>
+            <div class="special-card-sub">QTC · TRAINING TEAM · QUALITY TEAM</div>
           </div>
         </div>
         <div class="special-card-total">
@@ -944,7 +959,8 @@ function renderYubikeyTable(){
     else if(ybkIsAbsent(v))statusBadge='<span class="badge badge-resigned">Absent</span>';
     else if(ybkIsBuffer(v))statusBadge='<span class="badge" style="background:var(--bg-2);color:var(--text-1);border:1px solid var(--line)">Buffer</span>';
     else statusBadge='<span style="color:var(--text-2);font-size:12px">—</span>';
-    const teamBadge = isWla ? ' <span class="badge" style="background:var(--purple-dim);color:var(--purple);margin-left:6px">WLA</span>' : (isQtc ? ' <span class="badge" style="background:var(--warn-dim);color:var(--warn);margin-left:6px">QTC</span>' : '');
+    const qtcLabel = isQtc ? esc(String(r.deviceNo||'').trim()) : '';
+    const teamBadge = isWla ? ' <span class="badge" style="background:var(--purple-dim);color:var(--purple);margin-left:6px">WLA</span>' : (isQtc ? ` <span class="badge" style="background:var(--warn-dim);color:var(--warn);margin-left:6px">${qtcLabel}</span>` : '');
     return`<tr><td><div class="name-cell"><div class="avatar" style="color:var(--purple)">${initials}</div><span style="font-weight:600">${esc(r.name)}</span>${teamBadge}</div></td><td class="mono" style="color:var(--text-1);font-size:12px">${esc(r.deviceNo||'—')}</td><td style="color:var(--text-1)">${esc(r.location||'—')}</td><td class="mono" style="color:var(--signal);font-size:12px">${esc(r.yubikey||'—')}</td><td class="ybk-date-col">${v?`<span class="ybk-att-cell ${ybkAttClass(v)}">${esc(ybkAttLabel(v))}</span>`:'—'}</td><td>${statusBadge}</td></tr>`;
   }).join('');
 }
