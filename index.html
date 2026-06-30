@@ -389,7 +389,7 @@
       <!-- Search + Status filter -->
       <div class="toolbar">
         <div class="search-wrap"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" id="ybkSearch" placeholder="Search by name..." oninput="renderYubikeyTable()"></div>
-        <select id="ybkStatusFilter" onchange="renderYubikeyTable()"><option value="">All statuses</option><option value="present">Present (P / TP)</option><option value="absent">Absent (0)</option><option value="training">Training (T)</option><option value="buffer">Buffer (—)</option></select>
+        <select id="ybkStatusFilter" onchange="renderYubikeyTable()"><option value="">All statuses</option><option value="present">Present (P / TP)</option><option value="absent">Absent (0)</option><option value="training">Training (T)</option></select>
       </div>
 
       <!-- ✅ Site Cards (Nasr City + St. Fatima) -->
@@ -760,23 +760,6 @@ function renderSiteCards(rows, date) {
 
     // ✅ Insert the Nasr City flash drive count card right after the Nasr City site card
     if (group.key === 'nasr_city') {
-      // ✅ Nasr City buffer breakdown: anyone (non-WLA) in Nasr City with attendance "-"/"E" OR no yubikey value at all.
-      // Split by what their attendance status WOULD classify as: Training, Present (Production), or Absent.
-      let nasrCityBufferTraining = 0, nasrCityBufferProduction = 0, nasrCityBufferAbsent = 0;
-      rows.forEach(r => {
-        const loc = (r.location || '').trim().toLowerCase();
-        if (getSiteForLocation(loc) !== 'nasr_city') return;
-        if (ybkIsWLA(r.deviceNo)) return; // WLA handled separately, has no real yubikey field by design
-        const v = r.attendance[date] || '';
-        const noYubikeyValue = !String(r.yubikey || '').trim();
-        if (!ybkIsBuffer(v) && !noYubikeyValue) return; // has a real yubikey and a normal status — not buffer
-        if (ybkIsTraining(v)) nasrCityBufferTraining++;
-        else if (ybkIsPresent(v)) nasrCityBufferProduction++;
-        else if (ybkIsAbsent(v)) nasrCityBufferAbsent++;
-        else nasrCityBufferAbsent++; // dash/E with no clearer status — bucket under Absent as a fallback
-      });
-      const nasrCityBufferTotal = nasrCityBufferTraining + nasrCityBufferProduction + nasrCityBufferAbsent;
-
       html += `
       <div class="site-card">
         <div class="site-card-header" style="cursor:default">
@@ -792,36 +775,6 @@ function renderSiteCards(rows, date) {
           <div style="display:flex;align-items:center;gap:6px">
             <div class="site-totals">
               <div class="site-total-item"><div class="site-total-val" style="color:var(--purple)">${nasrCityFlashTotal}</div><div class="site-total-lbl">Total</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="site-card">
-        <div class="site-card-header" style="cursor:default">
-          <div class="site-card-left">
-            <div class="site-icon" style="background:var(--bg-2);border:1px solid var(--line);color:var(--text-1)">
-              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-            </div>
-            <div>
-              <div class="site-name">Nasr City Buffer</div>
-              <div class="site-sub">No yubikey assigned</div>
-            </div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <div class="site-totals">
-              <div class="site-total-item"><div class="site-total-val" style="color:var(--text-0)">${nasrCityBufferTotal}</div><div class="site-total-lbl">Total</div></div>
-            </div>
-          </div>
-        </div>
-        <div class="site-card-body" style="display:block">
-          <div class="site-locations-grid">
-            <div class="site-loc-card">
-              <div class="site-loc-name">Breakdown</div>
-              <div class="site-loc-stats">
-                <div class="site-loc-stat"><div class="site-loc-stat-val" style="color:var(--ok)">${nasrCityBufferProduction}</div><div class="site-loc-stat-lbl">Production</div></div>
-                <div class="site-loc-stat"><div class="site-loc-stat-val" style="color:var(--bad)">${nasrCityBufferAbsent}</div><div class="site-loc-stat-lbl">Absent</div></div>
-                <div class="site-loc-stat"><div class="site-loc-stat-val" style="color:var(--warn)">${nasrCityBufferTraining}</div><div class="site-loc-stat-lbl">Training</div></div>
-              </div>
             </div>
           </div>
         </div>
@@ -845,24 +798,14 @@ function renderSpecialCards(rows, date) {
   const container = document.getElementById('ybkSpecialCards');
   if (!date) { container.innerHTML = ''; return; }
 
-  // ── Buffer (non-WLA, non-QTC people with attendance === "-") ──
-  const bufferRows = rows.filter(r => !ybkIsWLA(r.deviceNo) && !ybkIsQTC(r.deviceNo) && ybkIsBuffer(r.attendance[date] || '') && getSiteForLocation((r.location||'').toLowerCase()) !== 'nasr_city');
-  const bufferByLocation = new Map();
-  bufferRows.forEach(r => {
-    const loc = (r.location || 'Unknown').trim() || 'Unknown';
-    bufferByLocation.set(loc, (bufferByLocation.get(loc) || 0) + 1);
-  });
-  const bufferTotal = bufferRows.length;
-
   // ── WLA (Device No. === "WLA"), split by their attendance status ──
   const wlaRows = rows.filter(r => ybkIsWLA(r.deviceNo));
-  let wlaPresent = 0, wlaTraining = 0, wlaAbsent = 0, wlaBuffer = 0, wlaOther = 0;
+  let wlaPresent = 0, wlaTraining = 0, wlaAbsent = 0, wlaOther = 0;
   wlaRows.forEach(r => {
     const v = r.attendance[date] || '';
     if (ybkIsPresent(v)) wlaPresent++;
     else if (ybkIsTraining(v)) wlaTraining++;
     else if (ybkIsAbsent(v)) wlaAbsent++;
-    else if (ybkIsBuffer(v)) wlaBuffer++;
     else wlaOther++;
   });
   const wlaTotal = wlaRows.length;
@@ -892,14 +835,6 @@ function renderSpecialCards(rows, date) {
   const qtcOrder = ['NC', 'SF', 'Other'];
   const qtcSubOrder = ['QTC', 'Training Team', 'Quality Team'];
 
-  const bufferRowsHtml = bufferByLocation.size
-    ? [...bufferByLocation.entries()].sort((a,b)=>b[1]-a[1]).map(([loc,count]) => `
-        <div class="special-card-row">
-          <span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--text-2)"></span>${esc(loc)}</span>
-          <span class="special-card-row-val" style="color:var(--text-0)">${count}</span>
-        </div>`).join('')
-    : '';
-
   const wlaRowsHtml = `
     <div class="special-card-row">
       <span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--ok)"></span>Present</span>
@@ -912,10 +847,6 @@ function renderSpecialCards(rows, date) {
     <div class="special-card-row">
       <span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--bad)"></span>Absent</span>
       <span class="special-card-row-val" style="color:var(--bad)">${wlaAbsent}</span>
-    </div>
-    <div class="special-card-row">
-      <span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--text-2)"></span>Buffer (—)</span>
-      <span class="special-card-row-val" style="color:var(--text-0)">${wlaBuffer}</span>
     </div>
     ${wlaOther ? `<div class="special-card-row"><span class="special-card-row-label"><span class="special-card-row-dot" style="background:var(--text-2)"></span>Other</span><span class="special-card-row-val" style="color:var(--text-0)">${wlaOther}</span></div>` : ''}
   `;
@@ -940,26 +871,6 @@ function renderSpecialCards(rows, date) {
     : '';
 
   container.innerHTML = `
-    <div class="special-card">
-      <div class="special-card-header">
-        <div class="special-card-title">
-          <div class="special-card-icon" style="background:var(--bg-2);border:1px solid var(--line);color:var(--text-1)">
-            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          </div>
-          <div>
-            <div class="special-card-name">Buffer</div>
-            <div class="special-card-sub">NO YUBIKEY ASSIGNED</div>
-          </div>
-        </div>
-        <div class="special-card-total">
-          <div class="special-card-total-val" style="color:var(--text-0)">${bufferTotal}</div>
-          <div class="special-card-total-lbl">Total</div>
-        </div>
-      </div>
-      <div class="special-card-body">
-        ${bufferRowsHtml || '<div class="special-card-empty">No buffer records for this date</div>'}
-      </div>
-    </div>
     <div class="special-card">
       <div class="special-card-header">
         <div class="special-card-title">
@@ -1195,9 +1106,10 @@ function renderYubikeyTable(){
     const isQtc=ybkIsQTC(r.deviceNo);
     const inSite=getSiteForLocation(loc)!==null;
     if(!inSite && !isWla && !isQtc)return false; // ✅ إخفاء 71, Blank Emails, Unknown (إلا لو WLA/QTC)
+    if(!isWla && !String(r.yubikey||'').trim())return false; // ✅ نحسب بس اللي معاهم فلاشة فعلية
     const v=r.attendance[date]||'';
     const ms=!search||r.name.toLowerCase().includes(search);
-    const ss=!statusFilter||(statusFilter==='present'&&ybkIsPresent(v))||(statusFilter==='absent'&&ybkIsAbsent(v))||(statusFilter==='training'&&ybkIsTraining(v))||(statusFilter==='buffer'&&ybkIsBuffer(v));
+    const ss=!statusFilter||(statusFilter==='present'&&ybkIsPresent(v))||(statusFilter==='absent'&&ybkIsAbsent(v))||(statusFilter==='training'&&ybkIsTraining(v));
     return ms&&ss;
   });
 
@@ -1222,7 +1134,6 @@ function renderYubikeyTable(){
     if(ybkIsPresent(v))statusBadge='<span class="badge badge-active">Present</span>';
     else if(ybkIsTraining(v))statusBadge='<span class="badge badge-training">Training</span>';
     else if(ybkIsAbsent(v))statusBadge='<span class="badge badge-resigned">Absent</span>';
-    else if(ybkIsBuffer(v))statusBadge='<span class="badge" style="background:var(--bg-2);color:var(--text-1);border:1px solid var(--line)">Buffer</span>';
     else statusBadge='<span style="color:var(--text-2);font-size:12px">—</span>';
     const qtcLabel = isQtc ? esc(String(r.deviceNo||'').trim()) : '';
     const teamBadge = isWla ? ' <span class="badge" style="background:var(--purple-dim);color:var(--purple);margin-left:6px">WLA</span>' : (isQtc ? ` <span class="badge" style="background:var(--warn-dim);color:var(--warn);margin-left:6px">${qtcLabel}</span>` : '');
