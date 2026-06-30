@@ -994,18 +994,20 @@ function renderNasrCityReport(rows, date) {
   // ✅ Everyone else (non-WLA) needs an actual recorded yubikey to count toward the report
   const nasrRows = nasrRowsAll.filter(r => !ybkIsWLA(r.deviceNo)).filter(hasYubikey);
 
-  const totalYubikey = nasrRows.length + wlaCount;
-
   // ✅ Hiring Team = everyone whose attendance status on this date is Training (T/T1/T2/T3)
   const hiringTeamRows = nasrRows.filter(r => ybkIsTraining(r.attendance[date] || ''));
   const hiringTeamCount = hiringTeamRows.length;
 
   const stlTrainingQuality = 1; // fixed value, per request
 
-  // ✅ Labelers = everyone left after removing the Training/Hiring group above (WLA already excluded from nasrRows)
-  const labelerPool = nasrRows.filter(r => !hiringTeamRows.includes(r));
+  // ✅ Labelers = everyone Present today (excludes WLA + Training/Hiring group); should match the Present count shown in the Nasr City site card
+  const labelerPool = nasrRows.filter(r => !hiringTeamRows.includes(r) && ybkIsPresent(r.attendance[date] || ''));
   const labelerCount = labelerPool.length;
-  const labelerAbsentCount = labelerPool.filter(r => ybkIsAbsent(r.attendance[date] || '')).length;
+  // ✅ Absent Labelers: counted separately from the same non-WLA/non-Training pool
+  const labelerAbsentPool = nasrRows.filter(r => !hiringTeamRows.includes(r) && ybkIsAbsent(r.attendance[date] || ''));
+  const labelerAbsentCount = labelerAbsentPool.length;
+
+  const totalYubikey = labelerCount + labelerAbsentCount + hiringTeamCount + wlaCount + stlTrainingQuality;
 
   const report =
 `All Yubikeys GT are in place at the end of the Overnight shift.
