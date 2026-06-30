@@ -740,6 +740,15 @@ function renderSiteCards(rows, date) {
 
     // ✅ Insert the Nasr City flash drive count card right after the Nasr City site card
     if (group.key === 'nasr_city') {
+      // Nasr City buffer count (people based in Nasr City with attendance === "-", i.e. no yubikey assigned)
+      let nasrCityBufferTotal = 0;
+      rows.forEach(r => {
+        const loc = (r.location || '').trim().toLowerCase();
+        if (getSiteForLocation(loc) !== 'nasr_city') return;
+        const v = r.attendance[date] || '';
+        if (ybkIsBuffer(v)) nasrCityBufferTotal++;
+      });
+
       html += `
       <div class="site-card">
         <div class="site-card-header" style="cursor:default">
@@ -755,6 +764,24 @@ function renderSiteCards(rows, date) {
           <div style="display:flex;align-items:center;gap:6px">
             <div class="site-totals">
               <div class="site-total-item"><div class="site-total-val" style="color:var(--purple)">${nasrCityFlashTotal}</div><div class="site-total-lbl">Total</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="site-card">
+        <div class="site-card-header" style="cursor:default">
+          <div class="site-card-left">
+            <div class="site-icon" style="background:var(--bg-2);border:1px solid var(--line);color:var(--text-1)">
+              <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="site-name">Nasr City Buffer</div>
+              <div class="site-sub">No yubikey assigned</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="site-totals">
+              <div class="site-total-item"><div class="site-total-val" style="color:var(--text-0)">${nasrCityBufferTotal}</div><div class="site-total-lbl">Total</div></div>
             </div>
           </div>
         </div>
@@ -779,7 +806,7 @@ function renderSpecialCards(rows, date) {
   if (!date) { container.innerHTML = ''; return; }
 
   // ── Buffer (non-WLA, non-QTC people with attendance === "-") ──
-  const bufferRows = rows.filter(r => !ybkIsWLA(r.deviceNo) && !ybkIsQTC(r.deviceNo) && ybkIsBuffer(r.attendance[date] || ''));
+  const bufferRows = rows.filter(r => !ybkIsWLA(r.deviceNo) && !ybkIsQTC(r.deviceNo) && ybkIsBuffer(r.attendance[date] || '') && getSiteForLocation((r.location||'').toLowerCase()) !== 'nasr_city');
   const bufferByLocation = new Map();
   bufferRows.forEach(r => {
     const loc = (r.location || 'Unknown').trim() || 'Unknown';
