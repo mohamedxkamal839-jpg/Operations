@@ -184,6 +184,13 @@
   .ybk-history-table th { font-size:9.5px; padding:10px 14px; }
   .ybk-history-table td { padding:11px 14px; font-size:13px; }
   .ybk-date-col { min-width:70px; text-align:center; }
+  .ybk-location-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin-bottom:1.5rem; }
+  .ybk-loc-card { background:var(--bg-1); border:1px solid var(--line); border-radius:10px; padding:1rem 1.2rem; box-shadow:var(--shadow-card); }
+  .ybk-loc-title { font-size:13px; font-weight:700; color:var(--text-0); margin-bottom:10px; }
+  .ybk-loc-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .ybk-loc-stat { text-align:center; background:var(--bg-2); border-radius:6px; padding:6px 4px; }
+  .ybk-loc-stat-val { font-size:18px; font-weight:800; font-variant-numeric:tabular-nums; }
+  .ybk-loc-stat-lbl { font-family:JetBrains Mono,monospace; font-size:9px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
   @media (max-width:640px) {
     main { padding:1.25rem; } nav { padding:0 1.25rem; }
     .nav-brand-text .subtitle { display:none; } .nav-user { display:none; }
@@ -327,6 +334,7 @@
         <div class="search-wrap"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><input type="text" id="ybkSearch" placeholder="Search by name..." oninput="renderYubikeyTable()"></div>
         <select id="ybkStatusFilter" onchange="renderYubikeyTable()"><option value="">All statuses</option><option value="present">Present (P / TP)</option><option value="absent">Absent (0)</option><option value="training">Training (T)</option></select>
       </div>
+      <div class="ybk-location-grid" id="ybkLocationGrid"></div>
       <div class="ybk-history-card">
         <div class="ybk-history-header"><span class="ybk-history-title">Yubikey records</span><span class="table-count" id="ybkRowCount" style="color:var(--purple);background:var(--purple-dim);border-color:var(--purple-line)">—</span></div>
         <div class="ybk-scroll">
@@ -370,7 +378,7 @@
 const SUPABASE_URL      = 'https://dibhtnnkhakcygzpenwg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpYmh0bm5raGFrY3lnenBlbndnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MjIxMTYsImV4cCI6MjA5NzM5ODExNn0.XUHnSsMV4nY3lknsVms_BjhAoEf2Riy0jDAdoezfszo';
 const SESSION_KEY       = 'supabaseSession';
-const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycby04ZP0q1QAbUctrOaatVlD6U1Hu5dqD2G3gBjAOkuBlGi1RDH4H5XvWL16TGRwyhA8Ug/exec';
+const APPS_SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbyFRt4aa_Mbzdy11G5B8-U6l92bM-D0IcFPYyC5ccLBwsvspmjm7FD6WxP1l8q5huQ5iA/exec';
 
 // ── Cache في localStorage (يفضل بعد إغلاق المتصفح) ──
 const CACHE_KEY     = 'ops_cache_v3';
@@ -540,6 +548,10 @@ function renderYubikeyTable(){
   let rows=yubikeyData.rows||[];
   let present=0,absent=0,training=0;
   rows.forEach(r=>{const v=r.attendance[date]||'';if(ybkIsPresent(v))present++;if(ybkIsAbsent(v))absent++;if(ybkIsTraining(v))training++;});
+  // Location breakdown
+  const locMap=new Map();
+  rows.forEach(r=>{const loc=r.location||"Unknown";if(!locMap.has(loc))locMap.set(loc,{present:0,absent:0,training:0});const v=r.attendance[date]||"";if(ybkIsPresent(v))locMap.get(loc).present++;else if(ybkIsAbsent(v))locMap.get(loc).absent++;else if(ybkIsTraining(v))locMap.get(loc).training++;});
+  document.getElementById("ybkLocationGrid").innerHTML=[...locMap.entries()].sort((a,b)=>a[0].localeCompare(b[0])).map(([loc,s])=>`<div class="ybk-loc-card"><div class="ybk-loc-title">${esc(loc)}</div><div class="ybk-loc-stats"><div class="ybk-loc-stat"><div class="ybk-loc-stat-val" style="color:var(--ok)">${s.present}</div><div class="ybk-loc-stat-lbl">Present</div></div><div class="ybk-loc-stat"><div class="ybk-loc-stat-val" style="color:var(--bad)">${s.absent}</div><div class="ybk-loc-stat-lbl">Absent</div></div><div class="ybk-loc-stat"><div class="ybk-loc-stat-val" style="color:var(--warn)">${s.training}</div><div class="ybk-loc-stat-lbl">Training</div></div></div></div>`).join("");
   document.getElementById('ybkTotal').textContent=present+training;
   document.getElementById('ybkPresent').textContent=present;
   document.getElementById('ybkAbsent').textContent=absent;
