@@ -696,17 +696,22 @@ function renderSiteCards(rows, date) {
     else if (ybkIsTraining(v)) s.training++;
   });
 
-  // ✅ Nasr City flash drive (Yubikey) total — counts everyone located in Nasr City who
-  // has an actual Yubikey assigned (non-buffer), INCLUDING WLA team members based there.
-  // QTC/Training/Quality team members are still excluded since they don't hold a flash drive here.
+  // ✅ Nasr City Yubikeys total — counts everyone located in Nasr City who has an actual
+  // Yubikey assigned. WLA team members are counted by Present status (their flash drive
+  // number isn't tracked individually in the sheet, but they DO carry one when present).
+  // QTC/Training/Quality team members are excluded since they don't hold a flash drive here.
   let nasrCityFlashTotal = 0;
   rows.forEach(r => {
     if (ybkIsQTC(r.deviceNo)) return;
     const loc = (r.location || '').trim().toLowerCase();
     if (getSiteForLocation(loc) !== 'nasr_city') return;
     const v = r.attendance[date] || '';
-    if (ybkIsBuffer(v)) return; // no flash drive assigned
-    if (!String(r.yubikey || '').trim()) return; // no flash drive value recorded
+    if (ybkIsWLA(r.deviceNo)) {
+      if (ybkIsPresent(v)) nasrCityFlashTotal++;
+      return;
+    }
+    if (ybkIsBuffer(v)) return; // no yubikey assigned
+    if (!String(r.yubikey || '').trim()) return; // no yubikey value recorded
     nasrCityFlashTotal++;
   });
 
@@ -768,7 +773,7 @@ function renderSiteCards(rows, date) {
               <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M12 12h.01"/><path d="M7 12h.01"/><path d="M17 12h.01"/></svg>
             </div>
             <div>
-              <div class="site-name">Nasr City Flash Drives</div>
+              <div class="site-name">Nasr City Yubikeys</div>
               <div class="site-sub">Yubikeys assigned (incl. WLA)</div>
             </div>
           </div>
