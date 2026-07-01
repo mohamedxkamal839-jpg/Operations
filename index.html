@@ -565,6 +565,9 @@ let allData=[], trainingData=[], yubikeyData={dateColumns:[],rows:[]}, avpData={
 let sortCol='', sortAsc=true, pollTimer=null, session=null, isSyncing=false;
 let deleteTargetId=null, deleteTargetName=null, deleteTraineeTargetId=null, deleteTraineeTargetName=null, moveTargetId=null, moveTargetName=null, selectedYbkDate=null, selectedAvpDate=null;
 
+// ✅ أرقام Distribution مثبتة يدويًا — عدّل الأرقام دي من هنا لو اتغيرت
+const AVP_DISTRIBUTION = { TL: 1, QC: 5, USL: 5, SD: 30, PL: 8, SIM: 15 };
+
 // ✅ AVP ON attendance value classifiers
 function avpIsPresent(v){const u=String(v||'').trim().toUpperCase();return u==='P'||u==='ATTEND';}
 function avpIsAbsent(v){const u=String(v||'').trim().toUpperCase();return u==='0'||u==='ABSENT';}
@@ -759,8 +762,23 @@ function renderAvpReport(){
     else if(avpIsEmpty(v))empty++;
     else if(avpIsTraining(v))training++;
   });
+
+  const d=AVP_DISTRIBUTION;
+  const total=d.TL+d.QC+d.USL+d.SD+d.PL+d.SIM;
+
   el.textContent=
-`Attendance:
+`AVP YubiKeys
+All AVP YubiKeys are in place at the end of the overnight shift.
+Total: ${total} YubiKeys
+Distribution:
+• TL: ${d.TL}
+• QC: ${d.QC}
+• USL: ${d.USL}
+• SD: ${d.SD}
+• PL: ${d.PL}
+• SIM: ${d.SIM}
+---------------------------------------------
+Attendance:
 • Present: ${present}
 • Absent: ${absent}
 • Empty: ${empty}
