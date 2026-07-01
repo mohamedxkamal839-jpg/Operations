@@ -863,6 +863,8 @@ function renderAvpBufferTable(){
     return`<tr><td><div class="name-cell"><div class="avatar" style="color:var(--text-1)">${initials}</div><span style="font-weight:600">${esc(r.name)}</span></div></td><td class="mono" style="color:var(--text-1);font-size:12px">${esc(r.pcNo||'—')}</td><td class="mono" style="color:var(--text-2);font-size:12px">${esc(r.yubikey||'—')}</td><td style="color:var(--text-1)">${esc(r.role||'—')}</td><td class="ybk-date-col">${v?`<span class="ybk-att-cell ${avpIsPresent(v)?'ybk-att-p':avpIsAbsent(v)?'ybk-att-0':avpIsTraining(v)?'ybk-att-t':'ybk-att-buf'}">${esc(v)}</span>`:'—'}</td><td>${statusBadge}</td></tr>`;
   }).join('');
 }
+
+function renderAvpTable(){
   const date=selectedAvpDate;
   const tableEl=document.getElementById('avpTable');
   const emptyEl=document.getElementById('avpEmptyState');
