@@ -733,7 +733,11 @@ function renderAvpReport(){
   if(!el)return;
   const date=selectedAvpDate;
   if(!date){el.textContent='—';return;}
-  const rows=avpData.rows||[];
+  // ✅ استبعاد أي حد مالوش يوبيكي فعلي (Buffer أو فاضي) قبل العد
+  const rows=(avpData.rows||[]).filter(r=>{
+    const yk=String(r.yubikey||'').trim().toUpperCase();
+    return yk!=='' && yk!=='BUFFER';
+  });
   let present=0,absent=0,empty=0,training=0;
   rows.forEach(r=>{
     const v=r.attendance[date]||'';
