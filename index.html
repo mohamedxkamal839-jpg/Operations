@@ -22,8 +22,19 @@
   html { background: var(--bg-0); }
   body { font-family: 'Inter',sans-serif; background: var(--bg-0); color: var(--text-0); min-height: 100vh; overflow-x: hidden; background-image: radial-gradient(ellipse 900px 500px at 50% -10%,rgba(79,209,232,0.05),transparent 60%); background-repeat: no-repeat; }
   .mono { font-family: 'JetBrains Mono',monospace; }
-  .login-container { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
-  .login-card { background:var(--bg-1); border:1px solid var(--line); border-radius:10px; width:100%; max-width:396px; padding:2.75rem 2.25rem 2rem; box-shadow:var(--shadow-pop); }
+  .login-container { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; position:relative; overflow:hidden; }
+  .login-bg-particle { position:absolute; border-radius:50%; background:radial-gradient(circle,rgba(79,209,232,0.35) 0%,rgba(79,209,232,0) 70%); pointer-events:none; animation:floatParticle linear infinite; }
+  @keyframes floatParticle {
+    0%   { transform:translate(0,0) scale(1); opacity:0.5; }
+    50%  { transform:translate(30px,-60px) scale(1.15); opacity:0.9; }
+    100% { transform:translate(0,0) scale(1); opacity:0.5; }
+  }
+  .login-eyebrow-letter { display:inline-block; opacity:0; transform:translateY(10px); animation:letterAssemble 0.5s ease forwards; }
+  @keyframes letterAssemble {
+    to { opacity:1; transform:translateY(0); }
+  }
+  .login-brand-footer { text-align:center; margin-top:1.1rem; font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:1.5px; color:var(--text-2); text-transform:uppercase; position:relative; z-index:1; }
+  .login-card { background:var(--bg-1); border:1px solid var(--line); border-radius:10px; width:100%; max-width:396px; padding:2.75rem 2.25rem 2rem; box-shadow:var(--shadow-pop); position:relative; z-index:1; }
   .login-mark { width:42px; height:42px; border-radius:9px; background:linear-gradient(160deg,var(--signal) 0%,#2a8fa8 100%); display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:14px; color:#04181d; box-shadow:0 8px 24px rgba(79,209,232,0.25); }
   .login-header { text-align:center; margin-bottom:2.25rem; }
   .login-header .eyebrow { font-family:'JetBrains Mono',monospace; font-size:10.5px; letter-spacing:2px; color:var(--signal); font-weight:600; display:block; margin-bottom:10px; text-transform:uppercase; }
@@ -269,10 +280,15 @@
 <body>
 
 <div class="login-container" id="loginSection">
+  <div class="login-bg-particle" style="width:180px;height:180px;top:8%;left:10%;animation-duration:9s;"></div>
+  <div class="login-bg-particle" style="width:120px;height:120px;top:65%;left:75%;animation-duration:11s;animation-delay:1.5s;"></div>
+  <div class="login-bg-particle" style="width:90px;height:90px;top:20%;left:80%;animation-duration:7.5s;animation-delay:0.7s;"></div>
+  <div class="login-bg-particle" style="width:150px;height:150px;top:75%;left:15%;animation-duration:10s;animation-delay:2.2s;"></div>
+  <div class="login-bg-particle" style="width:70px;height:70px;top:45%;left:5%;animation-duration:8s;animation-delay:1s;"></div>
   <div class="login-card">
     <div class="login-mark">OT</div>
     <div class="login-header">
-      <span class="eyebrow">Operations Team</span>
+      <span class="eyebrow" id="eyebrowText"></span>
       <h1>Sign in to continue</h1>
       <p>Access restricted to authorized personnel</p>
     </div>
@@ -284,6 +300,7 @@
     </form>
     <div class="login-note">AUTHENTICATED VIA SUPABASE AUTH · DATA FROM GOOGLE SHEETS</div>
   </div>
+  <div class="login-brand-footer">Micro Engineering</div>
 </div>
 
 <div id="dashboardSection">
@@ -699,7 +716,16 @@ function saveSession(s){session=s;sessionStorage.setItem(SESSION_KEY,JSON.string
 function clearSession(){session=null;sessionStorage.removeItem(SESSION_KEY);}
 function authHeaders(extra){const s=getSession();return{'apikey':SUPABASE_ANON_KEY,'Authorization':`Bearer ${s?s.access_token:SUPABASE_ANON_KEY}`,...extra};}
 
-window.onload=()=>{if(getSession())showDashboard();};
+function animateEyebrowText(){
+  const el=document.getElementById('eyebrowText');
+  if(!el)return;
+  const text='OPERATIONS TEAM';
+  el.innerHTML=text.split('').map((ch,i)=>
+    `<span class="login-eyebrow-letter" style="animation-delay:${i*0.045}s">${ch===' '?'&nbsp;':esc(ch)}</span>`
+  ).join('');
+}
+
+window.onload=()=>{animateEyebrowText();if(getSession())showDashboard();};
 window.addEventListener('beforeunload',stopPolling);
 
 async function handleLogin(e){
