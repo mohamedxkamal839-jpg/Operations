@@ -384,7 +384,7 @@
       <div class="toolbar" style="margin-bottom:1.5rem">
         <span class="ybk-date-label">Select date:</span>
         <div class="ybk-date-selector" id="ybkDateSelector"><span style="font-size:13px;color:var(--text-2)">Loading dates...</span></div>
-        <div style="margin-left:auto"><button class="btn-ghost" onclick="loadYubikeyData(true)"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>Refresh</button></div>
+        <div style="margin-left:auto"><button class="btn-ghost" onclick="loadYubikeyData(true);loadAvpData()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v6h-6"/></svg>Refresh</button></div>
       </div>
 
       <!-- Search + Status filter -->
@@ -424,6 +424,23 @@
         </div>
         <div style="padding:1.2rem 1.5rem">
           <pre id="stFatimaReportText" class="mono" style="white-space:pre-wrap; font-size:13px; line-height:1.7; color:var(--text-0); background:var(--bg-0); border:1px solid var(--line); border-radius:8px; padding:1rem 1.2rem;">—</pre>
+        </div>
+      </div>
+
+      <!-- ✅ AVP - St. Fatima Daily Report (copyable message) -->
+      <div class="ybk-history-card" style="margin-bottom:1.5rem">
+        <div class="ybk-history-header">
+          <span class="ybk-history-title">AVP - St. Fatima Daily Report</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <div class="ybk-date-selector" id="avpDateSelector"><span style="font-size:13px;color:var(--text-2)">Loading dates...</span></div>
+            <button class="btn-ghost" onclick="copyAvpReport()">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy
+            </button>
+          </div>
+        </div>
+        <div style="padding:1.2rem 1.5rem">
+          <pre id="avpReportText" class="mono" style="white-space:pre-wrap; font-size:13px; line-height:1.7; color:var(--text-0); background:var(--bg-0); border:1px solid var(--line); border-radius:8px; padding:1rem 1.2rem;">—</pre>
         </div>
       </div>
 
@@ -532,9 +549,15 @@ function loadYbkCache() {
 
 const METI_EMAILS = new Set(['me490776@meti.ai','me708281@meti.ai','me685792@meti.ai','me234966@meti.ai','me991360@meti.ai','me938197@meti.ai','me121993@meti.ai','me281142@meti.ai','me408308@meti.ai','me692665@meti.ai','me635877@meti.ai','me153386@meti.ai','me569672@meti.ai','me822230@meti.ai','me622777@meti.ai','me409105@meti.ai','me254089@meti.ai','me584500@meti.ai','me583427@meti.ai']);
 
-let allData=[], trainingData=[], yubikeyData={dateColumns:[],rows:[]};
+let allData=[], trainingData=[], yubikeyData={dateColumns:[],rows:[]}, avpData={dateColumns:[],rows:[]};
 let sortCol='', sortAsc=true, pollTimer=null, session=null, isSyncing=false;
-let deleteTargetId=null, deleteTargetName=null, deleteTraineeTargetId=null, deleteTraineeTargetName=null, moveTargetId=null, moveTargetName=null, selectedYbkDate=null;
+let deleteTargetId=null, deleteTargetName=null, deleteTraineeTargetId=null, deleteTraineeTargetName=null, moveTargetId=null, moveTargetName=null, selectedYbkDate=null, selectedAvpDate=null;
+
+// ✅ AVP ON attendance value classifiers
+function avpIsPresent(v){const u=String(v||'').trim().toUpperCase();return u==='P'||u==='ATTEND';}
+function avpIsAbsent(v){const u=String(v||'').trim().toUpperCase();return u==='0'||u==='ABSENT';}
+function avpIsEmpty(v){const u=String(v||'').trim().toUpperCase();return u==='EMPTY';}
+function avpIsTraining(v){const u=String(v||'').trim().toUpperCase();return u==='T'||u==='TRAINING';}
 
 function esc(v){if(v==null)return'';return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');}
 function normalizeShift(v){if(!v)return'';const t=String(v).trim();return t?t[0].toUpperCase()+t.slice(1).toLowerCase():'';}
@@ -679,6 +702,69 @@ function buildDateSelector(){
   container.innerHTML=dates.map(d=>`<button class="ybk-date-btn${d===selectedYbkDate?' active':''}" onclick="selectYbkDate('${esc(d)}')">${esc(d)}</button>`).join('');
 }
 function selectYbkDate(d){selectedYbkDate=d;buildDateSelector();renderYubikeyTable();}
+
+// ── AVP ON ──
+async function loadAvpData(){
+  if(!getSession())return;
+  try{
+    const res=await fetch(APPS_SCRIPT_URL+'?sheet=avp');
+    if(!res.ok)throw new Error('Failed to fetch AVP data');
+    const json=await res.json();
+    if(json.error)throw new Error(json.error);
+    avpData=json.avp||{dateColumns:[],rows:[]};
+    buildAvpDateSelector();renderAvpReport();
+  }catch(ex){
+    const el=document.getElementById('avpReportText');
+    if(el)el.textContent='Failed to load AVP data: '+ex.message;
+  }
+}
+
+function buildAvpDateSelector(){
+  const dates=avpData.dateColumns||[];const container=document.getElementById('avpDateSelector');
+  if(!container)return;
+  if(!dates.length){container.innerHTML='<span style="font-size:13px;color:var(--text-2)">No dates available</span>';return;}
+  if(!selectedAvpDate||!dates.includes(selectedAvpDate))selectedAvpDate=dates[dates.length-1];
+  container.innerHTML=dates.map(d=>`<button class="ybk-date-btn${d===selectedAvpDate?' active':''}" onclick="selectAvpDate('${esc(d)}')">${esc(d)}</button>`).join('');
+}
+function selectAvpDate(d){selectedAvpDate=d;buildAvpDateSelector();renderAvpReport();}
+
+function renderAvpReport(){
+  const el=document.getElementById('avpReportText');
+  if(!el)return;
+  const date=selectedAvpDate;
+  if(!date){el.textContent='—';return;}
+  const rows=avpData.rows||[];
+  let present=0,absent=0,empty=0,training=0;
+  rows.forEach(r=>{
+    const v=r.attendance[date]||'';
+    if(!v)return;
+    if(avpIsPresent(v))present++;
+    else if(avpIsAbsent(v))absent++;
+    else if(avpIsEmpty(v))empty++;
+    else if(avpIsTraining(v))training++;
+  });
+  el.textContent=
+`Attendance:
+• Present: ${present}
+• Absent: ${absent}
+• Empty: ${empty}
+• Training : ${training}`;
+}
+
+function copyAvpReport(){
+  const el=document.getElementById('avpReportText');
+  if(!el)return;
+  const text=el.textContent||'';
+  navigator.clipboard.writeText(text).then(()=>{
+    showSuccess('Report copied to clipboard.');
+  }).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=text;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');}catch{}
+    document.body.removeChild(ta);
+    showSuccess('Report copied to clipboard.');
+  });
+}
 
 // ✅ SITE CARDS RENDERER
 // Note: WLA and QTC rows are excluded from site cards (each gets its own card),
@@ -1134,6 +1220,7 @@ function showView(view){
   });
   if(view==='sheets')renderSheets();
   if(view==='yubikey'&&yubikeyData.rows.length===0)loadYubikeyData();
+  if(view==='yubikey'&&avpData.rows.length===0)loadAvpData();
 }
 
 function showError(msg,scope){const id=scope==='training'?'trainingErrorBanner':'errorBanner';const b=document.getElementById(id);b.style.display='block';b.textContent=msg;document.getElementById(scope==='training'?'trainingSuccessBanner':'successBanner').style.display='none';}
